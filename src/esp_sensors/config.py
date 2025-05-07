@@ -36,6 +36,18 @@ DEFAULT_CONFIG = {
         }
     },
     "buttons": {"main_button": {"pin": 0, "pull_up": True}},
+    "mqtt": {
+        "enabled": False,
+        "broker": "mqtt.example.com",
+        "port": 1883,
+        "client_id": "esp_sensor",
+        "username": "",
+        "password": "",
+        "topic_prefix": "esp/sensors",
+        "publish_interval": 60,  # seconds
+        "ssl": False,
+        "keepalive": 60,
+    },
 }
 
 
@@ -156,6 +168,27 @@ def get_button_config(
         button_config = DEFAULT_CONFIG.get("buttons", {}).get(button_name, {})
 
     return button_config
+
+
+def get_mqtt_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Get MQTT configuration.
+
+    Args:
+        config: Configuration dictionary (if None, loads from default path)
+
+    Returns:
+        A dictionary containing the MQTT configuration
+    """
+    if config is None:
+        config = load_config()
+
+    # Try to get the MQTT configuration, fall back to default if not found
+    mqtt_config = config.get("mqtt")
+    if mqtt_config is None:
+        mqtt_config = DEFAULT_CONFIG.get("mqtt", {})
+
+    return mqtt_config
 
 
 def create_default_config(config_path: str = DEFAULT_CONFIG_PATH) -> bool:
