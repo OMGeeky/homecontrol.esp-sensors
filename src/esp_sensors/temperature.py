@@ -23,7 +23,7 @@ class TemperatureSensor(Sensor):
             raise ValueError("Unit must be either 'C' or 'F'")
         self.unit = unit
 
-    def read(self) -> float:
+    def read_temperature(self) -> float:
         """
         Read the current temperature.
 
@@ -37,6 +37,15 @@ class TemperatureSensor(Sensor):
         else:
             self._last_reading = round(random.uniform(59.0, 86.0), 1)
         return self._last_reading
+
+    def read(self) -> float:
+        """
+        Read the current temperature (wrapper for read_temperature).
+
+        Returns:
+            The temperature reading as a float
+        """
+        return self.read_temperature()
 
     def get_metadata(self):
         """

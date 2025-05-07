@@ -10,10 +10,11 @@ except ImportError:
     import random
     SIMULATION = True
 
-from .sensor import Sensor
+from .temperature import TemperatureSensor
+from .humidity import HumiditySensor
 
 
-class DHT22Sensor(Sensor):
+class DHT22Sensor(TemperatureSensor, HumiditySensor):
     """DHT22 temperature and humidity sensor implementation."""
 
     def __init__(self, name: str, pin: int, interval: int = 60, unit: str = "C"):
@@ -26,17 +27,15 @@ class DHT22Sensor(Sensor):
             interval: Reading interval in seconds (default: 60)
             unit: Temperature unit, either "C" for Celsius or "F" for Fahrenheit (default: "C")
         """
-        super().__init__(name, pin, interval)
-        if unit not in ["C", "F"]:
-            raise ValueError("Unit must be either 'C' or 'F'")
-        self.unit = unit
-        self._last_humidity = None
+        # Initialize both parent classes
+        TemperatureSensor.__init__(self, name, pin, interval, unit)
+        HumiditySensor.__init__(self, name, pin, interval)
 
         # Initialize the sensor if not in simulation mode
         if not SIMULATION:
             self._sensor = dht.DHT22(Pin(pin))
 
-    def read(self) -> float:
+    def read_temperature(self) -> float:
         """
         Read the current temperature.
 
@@ -44,14 +43,11 @@ class DHT22Sensor(Sensor):
             The temperature reading as a float
         """
         if SIMULATION:
-            # Simulate temperature reading
-            if self.unit == "C":
-                self._last_reading = round(random.uniform(15.0, 30.0), 1)
-            else:
-                self._last_reading = round(random.uniform(59.0, 86.0), 1)
-
-            # Simulate humidity reading (between 30% and 90%)
-            self._last_humidity = round(random.uniform(30.0, 90.0), 1)
+            # Use parent class simulation for temperature
+            temp_reading = super().read_temperature()
+            # Also update humidity in simulation mode
+            self._last_humidity = super().read_humidity()
+            return temp_reading
         else:
             # Actual hardware reading
             try:
@@ -63,6 +59,7 @@ class DHT22Sensor(Sensor):
                     temp = (temp * 9 / 5) + 32
 
                 self._last_reading = round(temp, 1)
+                # Also read humidity while we're at it
                 self._last_humidity = round(self._sensor.humidity(), 1)
             except Exception as e:
                 print(f"Error reading DHT22 sensor: {e}")
@@ -74,6 +71,15 @@ class DHT22Sensor(Sensor):
 
         return self._last_reading
 
+    def read(self) -> float:
+        """
+        Read the current temperature (wrapper for read_temperature).
+
+        Returns:
+            The temperature reading as a float
+        """
+        return self.read_temperature()
+
     def read_humidity(self) -> float:
         """
         Read the current humidity.
@@ -84,8 +90,8 @@ class DHT22Sensor(Sensor):
         # If we haven't read yet, read only humidity
         if self._last_humidity is None:
             if SIMULATION:
-                # Simulate humidity reading (between 30% and 90%)
-                self._last_humidity = round(random.uniform(30.0, 90.0), 1)
+                # Use parent class simulation
+                return super().read_humidity()
             else:
                 # Actual hardware reading
                 try:
@@ -104,9 +110,13 @@ class DHT22Sensor(Sensor):
         Returns:
             A dictionary containing sensor metadata
         """
-        metadata = super().get_metadata()
-        metadata["unit"] = self.unit
-        metadata["last_humidity"] = self._last_humidity
+        # Get metadata from TemperatureSensor
+        temp_metadata = TemperatureSensor.get_metadata(self)
+        # Get metadata from HumiditySensor
+        humidity_metadata = HumiditySensor.get_metadata(self)
+
+        # Combine metadata from both parent classes
+        metadata = {**temp_metadata, **humidity_metadata}
         metadata["type"] = "DHT22"
         return metadata
 
