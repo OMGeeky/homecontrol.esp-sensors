@@ -10,8 +10,9 @@ from src.esp_sensors.mqtt import setup_mqtt, publish_sensor_data, MQTTClient
 
 class TestSensor:
     """Mock sensor class for testing."""
+
     __test__ = False  # Prevent pytest from treating this as a test case
-    
+
     def __init__(self, name="Test Sensor", temperature_unit="C"):
         self.name = name
         self.temperature_unit = temperature_unit
@@ -57,14 +58,14 @@ def test_setup_mqtt_disabled(disabled_mqtt_config):
 
 def test_setup_mqtt_enabled(mqtt_config):
     """Test that setup_mqtt creates and connects a client when MQTT is enabled."""
-    with patch('src.esp_sensors.mqtt.MQTTClient') as mock_mqtt_client:
+    with patch("src.esp_sensors.mqtt.MQTTClient") as mock_mqtt_client:
         # Configure the mock
         mock_client_instance = MagicMock()
         mock_mqtt_client.return_value = mock_client_instance
-        
+
         # Call the function
         client = setup_mqtt(mqtt_config)
-        
+
         # Verify MQTTClient was created with correct parameters
         mock_mqtt_client.assert_called_once_with(
             mqtt_config["client_id"],
@@ -73,30 +74,30 @@ def test_setup_mqtt_enabled(mqtt_config):
             mqtt_config["username"],
             mqtt_config["password"],
             mqtt_config["keepalive"],
-            mqtt_config["ssl"]
+            mqtt_config["ssl"],
         )
-        
+
         # Verify connect was called
         mock_client_instance.connect.assert_called_once()
-        
+
         # Verify the client was returned
         assert client == mock_client_instance
 
 
 def test_setup_mqtt_connection_error(mqtt_config):
     """Test that setup_mqtt handles connection errors gracefully."""
-    with patch('src.esp_sensors.mqtt.MQTTClient') as mock_mqtt_client:
+    with patch("src.esp_sensors.mqtt.MQTTClient") as mock_mqtt_client:
         # Configure the mock to raise an exception on connect
         mock_client_instance = MagicMock()
         mock_client_instance.connect.side_effect = Exception("Connection failed")
         mock_mqtt_client.return_value = mock_client_instance
-        
+
         # Call the function
         client = setup_mqtt(mqtt_config)
-        
+
         # Verify connect was called
         mock_client_instance.connect.assert_called_once()
-        
+
         # Verify None was returned due to the error
         assert client is None
 
@@ -105,23 +106,25 @@ def test_publish_sensor_data_success(mqtt_config, mock_sensor):
     """Test that publish_sensor_data publishes to the correct topics."""
     # Create a mock client
     mock_client = MagicMock()
-    
+
     # Call the function
     temperature = 25.5
     humidity = 60.0
-    result = publish_sensor_data(mock_client, mqtt_config, mock_sensor, temperature, humidity)
-    
+    result = publish_sensor_data(
+        mock_client, mqtt_config, mock_sensor, temperature, humidity
+    )
+
     # Verify the result
     assert result is True
-    
+
     # Verify publish was called for temperature
     temp_topic = f"{mqtt_config['topic_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/temperature"
     mock_client.publish.assert_any_call(temp_topic, str(temperature).encode())
-    
+
     # Verify publish was called for humidity
     humidity_topic = f"{mqtt_config['topic_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/humidity"
     mock_client.publish.assert_any_call(humidity_topic, str(humidity).encode())
-    
+
     # Verify publish was called for combined data
     data_topic = f"{mqtt_config['topic_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/data"
     # Check that the JSON data was published
@@ -149,9 +152,9 @@ def test_publish_sensor_data_error(mqtt_config, mock_sensor):
     # Create a mock client that raises an exception on publish
     mock_client = MagicMock()
     mock_client.publish.side_effect = Exception("Publish failed")
-    
+
     # Call the function
     result = publish_sensor_data(mock_client, mqtt_config, mock_sensor, 25.5, 60.0)
-    
+
     # Verify the result
     assert result is False

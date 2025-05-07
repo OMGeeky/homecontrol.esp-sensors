@@ -29,6 +29,7 @@ class OLEDDisplay(Sensor):
         height: int = None,
         address: int | str = None,
         interval: int = None,
+        on_time: int = None,
         display_config: Dict[str, Any] = None,
     ):
         """
@@ -42,6 +43,7 @@ class OLEDDisplay(Sensor):
             height: Display height in pixels (if None, loaded from config)
             address: I2C address of the display (if None, loaded from config)
             interval: Refresh interval in seconds (if None, loaded from config)
+            on_time: The time, the display should stay on (if None, loaded from config)
             display_config: Configuration dictionary
         """
 
@@ -65,6 +67,9 @@ class OLEDDisplay(Sensor):
         self.sda_pin = sda_pin  # Already set above
         self.width = width if width is not None else display_config.get("width", 128)
         self.height = height if height is not None else display_config.get("height", 64)
+        self.on_time = (
+            on_time if on_time is not None else display_config.get("on_time", 5)
+        )
 
         # Handle address (could be string in config)
         if address is None:

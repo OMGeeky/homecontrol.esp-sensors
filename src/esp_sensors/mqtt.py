@@ -12,15 +12,27 @@ from typing import Dict, Any, Optional, Union
 # Import hardware-specific modules if available (for ESP32/ESP8266)
 try:
     from umqtt.simple import MQTTClient
+
     SIMULATION = False
 except ImportError:
     # Simulation mode for development on non-ESP hardware
     SIMULATION = True
-    print("[MQTT] Running in simulation mode - MQTT messages will be printed to console")
+    print(
+        "[MQTT] Running in simulation mode - MQTT messages will be printed to console"
+    )
 
     # Mock MQTT client for simulation
     class MQTTClient:
-        def __init__(self, client_id, server, port=0, user=None, password=None, keepalive=0, ssl=False):
+        def __init__(
+            self,
+            client_id,
+            server,
+            port=0,
+            user=None,
+            password=None,
+            keepalive=0,
+            ssl=False,
+        ):
             self.client_id = client_id
             self.server = server
             self.port = port
@@ -79,8 +91,13 @@ def setup_mqtt(mqtt_config: Dict[str, Any]) -> Optional[MQTTClient]:
         return None
 
 
-def publish_sensor_data(client: Optional[MQTTClient], mqtt_config: Dict[str, Any], 
-                        sensor: Any, temperature: float, humidity: float) -> bool:
+def publish_sensor_data(
+    client: Optional[MQTTClient],
+    mqtt_config: Dict[str, Any],
+    sensor: Any,
+    temperature: float,
+    humidity: float,
+) -> bool:
     """
     Publish sensor data to MQTT topics.
 
@@ -115,11 +132,13 @@ def publish_sensor_data(client: Optional[MQTTClient], mqtt_config: Dict[str, Any
             "temperature": temperature,
             "humidity": humidity,
             "timestamp": time.time(),
-            "unit": sensor.unit
+            "unit": sensor.unit,
         }
         client.publish(data_topic, json.dumps(data).encode())
 
-        print(f"Published sensor data to MQTT: {temp_topic}, {humidity_topic}, {data_topic}")
+        print(
+            f"Published sensor data to MQTT: {temp_topic}, {humidity_topic}, {data_topic}"
+        )
         return True
     except Exception as e:
         print(f"Failed to publish to MQTT: {e}")

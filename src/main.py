@@ -27,6 +27,7 @@ from esp_sensors.config import (
 try:
     from machine import Pin, deepsleep
     import esp32
+
     SIMULATION = False
 except ImportError:
     # Simulation mode for development on non-ESP hardware
@@ -110,7 +111,9 @@ def main():
     # Display initialization message
     display.clear()
     display.display_text("Ready - Auto & Button", 0, 0)
-    print(f"System initialized. Will run every {mqtt_publish_interval} seconds or on button press...")
+    print(
+        f"System initialized. Will run every {mqtt_publish_interval} seconds or on button press..."
+    )
 
     # Main loop - sleep until button press, then read and display sensor data
     try:
@@ -118,32 +121,36 @@ def main():
             # Calculate time until next scheduled reading
             current_time = time.time()
             time_since_last_read = current_time - last_read_time
-            time_until_next_read = max(0, mqtt_publish_interval - int(time_since_last_read))
+            time_until_next_read = max(
+                0, mqtt_publish_interval - int(time_since_last_read)
+            )
 
             # Wait for button press or until next scheduled reading
-            button_pressed = False
-
             if SIMULATION:
                 # In simulation mode, wait for Enter key with timeout
-                if not simulate_button_press(timeout=time_until_next_read if last_read_time > 0 else None):
+
+                if not simulate_button_press(timeout=time_until_next_read):
                     break  # Exit if 'q' was pressed or Ctrl+C
 
-                # If we get here, either button was pressed or timeout occurred
-                button_pressed = True
             else:
                 # In hardware mode, check if button is pressed (active low)
-                if button.value() == 0:  # Button is pressed
-                    button_pressed = True
+                button_pressed_value = 0 if not pull_up else 1 # TODO: check if 1 is correct
+                if button.value() == button_pressed_value:  # Button is pressed
+                    pass
                 elif time_since_last_read >= mqtt_publish_interval:
                     # Time for scheduled reading
-                    button_pressed = True
+                    pass
                 else:
                     # Go to light sleep mode to save power
                     # Wake up on pin change (button press) or timer
-                    print(f"Entering light sleep mode for {time_until_next_read:.1f} seconds or until button press...")
+                    print(
+                        f"Entering light sleep mode for {time_until_next_read:.1f} seconds or until button press..."
+                    )
 
                     # Set up wake on button press
-                    esp32.wake_on_ext0(pin=button, level=0)  # Wake on button press (low)
+                    esp32.wake_on_ext0(
+                        pin=button, level=button_pressed_value
+                    )  # Wake on button press (low)
 
                     # Set up wake on timer
                     if last_read_time > 0:  # Skip timer on first run
@@ -154,13 +161,15 @@ def main():
                     esp32.light_sleep()  # Light sleep preserves RAM but saves power
 
                     # When we get here, either the button was pressed or the timer expired
-                    button_pressed = True
+                    print(f"Awake from light sleep")
 
             # Determine if this was triggered by a button press or scheduled interval
             if SIMULATION:
                 trigger_source = "user input or scheduled interval"
             else:
-                trigger_source = "button press" if button.value() == 0 else "scheduled interval"
+                trigger_source = (
+                    "button press" if button.value() == 0 else "scheduled interval"
+                )
             print(f"Reading sensor data (triggered by {trigger_source})...")
 
             # Read sensor values
@@ -169,6 +178,13 @@ def main():
 
             # Update last read time
             last_read_time = time.time()
+            # Adjust for actual sleep duration (so if we sleep longer or shorter (because of
+            # the button) than expected, we don't miss the next scheduled read)
+            actual_sleep_duration = last_read_time - current_time
+            last_read_time -= (
+                (actual_sleep_duration - time_until_next_read)
+                % mqtt_publish_interval
+            )
 
             # Format values for display
             temp_str = f"Temp: {temperature:.1f} C"
@@ -176,7 +192,9 @@ def main():
             time_str = f"Time: {time.time():.0f}"
             name_str = f"Sensor: {dht_sensor.name}"
 
+
             # Display values
+            # TODO: only display values, if the button has been clicked
             display.display_values(
                 [name_str, temp_str, hum_str, time_str, "Press button again"]
             )
@@ -184,22 +202,30 @@ def main():
             # Print to console
             print(f"Updated display with: {temp_str}, {hum_str}")
 
-            # Publish to MQTT if enabled and interval has elapsed
+            # Publish to MQTT if enabled
             current_time = time.time()
-            if mqtt_client and (current_time - last_publish_time >= mqtt_publish_interval):
-                publish_sensor_data(mqtt_client, mqtt_config, dht_sensor, temperature, humidity)
+            publish_sensor_data(
+                mqtt_client, mqtt_config, dht_sensor, temperature, humidity
+            )
+            if mqtt_client and (
+                current_time - last_publish_time >= mqtt_publish_interval
+            ):
                 last_publish_time = current_time
-                print(f"Next MQTT publish in {mqtt_publish_interval} seconds")
+                print(f"Next normal MQTT publish in {mqtt_publish_interval} seconds")
 
             # Keep display on for a few seconds before going back to sleep
-            time.sleep(5)
+            time.sleep(display.on_time)
 
             # Clear display to save power
             display.clear()
             display.display_text("Ready - Auto & Button", 0, 0)
 
+            print("last_read_time", last_read_time)
+
             if SIMULATION:
-                print(f"Display cleared. Will run again in {mqtt_publish_interval - (time.time() - last_read_time):.1f} seconds or on button press.")
+                print(
+                    f"Display cleared. Will run again in {mqtt_publish_interval - (time.time() - last_read_time):.1f} seconds or on button press."
+                )
 
     except KeyboardInterrupt:
         # Clean up on exit
