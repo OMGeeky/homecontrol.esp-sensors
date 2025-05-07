@@ -1,6 +1,6 @@
-# ESP32 Deployment Guide for Button-Triggered Display Example
+# ESP32 Deployment Guide for Button-Triggered Display Application
 
-This guide provides step-by-step instructions for setting up and deploying the `button_triggered_display.py` example to an ESP32 microcontroller.
+This guide provides step-by-step instructions for setting up and deploying the button-triggered display application to an ESP32 microcontroller.
 
 ## Required Hardware Components
 
@@ -92,23 +92,12 @@ You can use a tool like `ampy` or `rshell` to upload these libraries:
 3. **Copy the necessary files**:
    ```bash
    cp -r src/esp_sensors deploy/
-   cp examples/button_triggered_display.py deploy/main.py
+   cp src/main.py deploy/main.py
    ```
 
-4. **Modify the imports in main.py**:
-   Edit `deploy/main.py` to change the import statements:
-   ```python
-   # Replace these lines:
-   sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-   from src.esp_sensors.oled_display import OLEDDisplay
-   from src.esp_sensors.dht22 import DHT22Sensor
-   
-   # With these lines:
-   from esp_sensors.oled_display import OLEDDisplay
-   from esp_sensors.dht22 import DHT22Sensor
-   ```
+   Note: The main.py file is already configured with the correct imports for deployment.
 
-5. **Upload the files to ESP32**:
+4. **Upload the files to ESP32**:
    ```bash
    # Upload the esp_sensors package
    ampy --port /dev/ttyUSB0 mkdir esp_sensors
@@ -118,12 +107,12 @@ You can use a tool like `ampy` or `rshell` to upload these libraries:
    ampy --port /dev/ttyUSB0 put deploy/esp_sensors/humidity.py esp_sensors/humidity.py
    ampy --port /dev/ttyUSB0 put deploy/esp_sensors/dht22.py esp_sensors/dht22.py
    ampy --port /dev/ttyUSB0 put deploy/esp_sensors/oled_display.py esp_sensors/oled_display.py
-   
+
    # Upload the main script (will run automatically on boot)
    ampy --port /dev/ttyUSB0 put deploy/main.py
    ```
 
-## Running the Example
+## Running the Application
 
 1. **Reset your ESP32** by pressing the reset button or disconnecting and reconnecting power.
 
