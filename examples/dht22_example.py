@@ -32,7 +32,7 @@ if sys.implementation.name == "micropython":
         print(f"Sensor pin: {dht_config.get('pin')}")
 
         # Initialize the sensor using configuration
-        sensor = DHT22Sensor(sensor_config=config)
+        sensor = DHT22Sensor(sensor_config=dht_config)
 
         print("Starting sensor readings. Press Ctrl+C to stop.")
 
@@ -80,7 +80,7 @@ else:
         print(f"Sensor pin: {dht_config.get('pin')}")
 
         # Initialize the sensor using configuration
-        sensor = DHT22Sensor(sensor_config=config)
+        sensor = DHT22Sensor(sensor_config=dht_config)
 
         print("Starting simulated sensor readings. Press Ctrl+C to stop.")
 

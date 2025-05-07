@@ -14,6 +14,9 @@ The DHT22 (also known as AM2302) is a digital temperature and humidity sensor th
 - Error handling for sensor reading failures
 - Temperature unit conversion methods
 - Comprehensive metadata including sensor type and last readings
+- Configuration-based initialization
+- Separate configuration options for temperature and humidity components
+- Inherits functionality from both TemperatureSensor and HumiditySensor classes
 
 ## Hardware Requirements
 
@@ -54,6 +57,28 @@ fahrenheit = sensor.to_fahrenheit()
 print(f"Temperature: {fahrenheit}°F")
 ```
 
+### Configuration-Based Usage
+
+```python
+from src.esp_sensors.dht22 import DHT22Sensor
+
+# Initialize using configuration
+sensor_config = {
+    "name": "bedroom",
+    "pin": 5,
+    "interval": 30,
+    "temperature": {
+        "name": "Bedroom Temperature",
+        "unit": "F"
+    },
+    "humidity": {
+        "name": "Bedroom Humidity"
+    }
+}
+
+sensor = DHT22Sensor(sensor_config=sensor_config)
+```
+
 ### Advanced Usage
 
 ```python
@@ -90,26 +115,35 @@ except KeyboardInterrupt:
 
 ### Class: DHT22Sensor
 
-Extends the base `Sensor` class to provide DHT22-specific functionality.
+Extends both the `TemperatureSensor` and `HumiditySensor` classes to provide DHT22-specific functionality for reading both temperature and humidity from a single sensor.
 
 #### Constructor
 
 ```python
-DHT22Sensor(name: str, pin: int, interval: int = 60, unit: str = "C")
+DHT22Sensor(
+    name: str = None,
+    pin: int = None,
+    interval: int = None,
+    temperature_unit: str = None,
+    sensor_config: Dict[str, Any] = None
+)
 ```
 
-- **name**: A string identifier for the sensor
-- **pin**: The GPIO pin number the sensor is connected to
-- **interval**: Reading interval in seconds (default: 60)
-- **unit**: Temperature unit, either "C" for Celsius or "F" for Fahrenheit (default: "C")
+- **name**: A string identifier for the sensor (if None, loaded from config)
+- **pin**: The GPIO pin number the sensor is connected to (if None, loaded from config)
+- **interval**: Reading interval in seconds (if None, loaded from config)
+- **temperature_unit**: Temperature unit, either "C" for Celsius or "F" for Fahrenheit (if None, loaded from config)
+- **sensor_config**: Sensor configuration dictionary (if provided, used instead of loading from file)
 
 #### Methods
 
 - **read()**: Reads the current temperature and updates humidity
+- **read_temperature()**: Reads the current temperature (same as read())
 - **read_humidity()**: Returns the current humidity reading
 - **to_fahrenheit()**: Converts the last reading to Fahrenheit if it was in Celsius
 - **to_celsius()**: Converts the last reading to Celsius if it was in Fahrenheit
 - **get_metadata()**: Returns a dictionary with sensor information including temperature unit and humidity
+- **apply_parameters()**: Internal method to apply configuration parameters
 
 ## Example
 

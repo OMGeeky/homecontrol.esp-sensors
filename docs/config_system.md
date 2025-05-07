@@ -15,22 +15,17 @@ The configuration is stored in a JSON file named `config.json` in the project ro
 ```json
 {
     "sensors": {
-        "temperature": {
-            "name": "Living Room Temperature",
-            "pin": 4,
-            "interval": 60,
-            "unit": "C"
-        },
-        "humidity": {
-            "name": "Living Room Humidity",
-            "pin": 4,
-            "interval": 60
-        },
         "dht22": {
             "name": "Living Room DHT22",
             "pin": 4,
             "interval": 30,
-            "unit": "C"
+            "temperature": {
+                "name": "Living Room Temperature",
+                "unit": "C"
+            },
+            "humidity": {
+                "name": "Living Room Humidity"
+            }
         }
     },
     "displays": {
@@ -99,27 +94,67 @@ oled_config = get_display_config("oled", config)
 
 ### Creating Sensors with Configuration
 
-You can create sensors using the configuration system in two ways:
+You can create sensors using the configuration system in three ways:
 
-#### Method 1: Using sensor_type parameter
+#### Method 1: Using sensor_config directly
 
 ```python
 from src.esp_sensors.temperature import TemperatureSensor
 
-# Create a temperature sensor using configuration
-sensor = TemperatureSensor(sensor_type="temperature")
+# Get configuration
+from src.esp_sensors.config import get_sensor_config
+temp_config = get_sensor_config("temperature")
+
+# Create a temperature sensor with the configuration
+sensor = TemperatureSensor(sensor_config=temp_config)
 ```
 
-#### Method 2: Overriding some parameters
+#### Method 2: Overriding parameters directly
 
 ```python
 from src.esp_sensors.temperature import TemperatureSensor
 
-# Create a temperature sensor with custom name but other parameters from config
+# Create a temperature sensor with direct parameters
 sensor = TemperatureSensor(
     name="Custom Sensor",
-    sensor_type="temperature"
+    pin=5,
+    interval=30,
+    unit="F"
 )
+```
+
+You can also combine this with a configuration dictionary:
+
+```python
+from src.esp_sensors.temperature import TemperatureSensor
+from src.esp_sensors.config import get_sensor_config
+
+# Get configuration
+temp_config = get_sensor_config("temperature")
+
+# Create a sensor with some parameters from config, others specified directly
+sensor = TemperatureSensor(
+    name="Custom Sensor",  # Override the name from config
+    unit="F",              # Override the unit from config
+    sensor_config=temp_config  # Use other parameters from config
+)
+```
+
+#### Method 3: Creating a custom configuration dictionary
+
+```python
+from src.esp_sensors.temperature import TemperatureSensor
+
+# Create a custom configuration dictionary
+custom_config = {
+    "name": "Custom Temperature",
+    "pin": 5,
+    "interval": 30,
+    "unit": "F"
+}
+
+# Create a temperature sensor with the custom configuration
+sensor = TemperatureSensor(sensor_config=custom_config)
 ```
 
 ### Creating Displays with Configuration
@@ -138,6 +173,33 @@ display = OLEDDisplay(
     width=64,
     height=32
 )
+```
+
+You can also use the display_config parameter directly:
+
+```python
+from src.esp_sensors.oled_display import OLEDDisplay
+from src.esp_sensors.config import get_display_config
+
+# Get display configuration
+oled_config = get_display_config("oled")
+
+# Create an OLED display with the configuration
+display = OLEDDisplay(display_config=oled_config)
+
+# Or create a custom configuration dictionary
+custom_display_config = {
+    "name": "Custom OLED",
+    "scl_pin": 22,
+    "sda_pin": 21,
+    "width": 128,
+    "height": 32,
+    "address": "0x3C",
+    "interval": 30
+}
+
+# Create an OLED display with the custom configuration
+display = OLEDDisplay(display_config=custom_display_config)
 ```
 
 ## Saving Configuration
@@ -180,13 +242,25 @@ create_default_config("custom_config.json")
 
 - `unit`: Temperature unit, either "C" for Celsius or "F" for Fahrenheit
 
+### Humidity Sensor Parameters
+
+No additional parameters beyond the common ones.
+
+### DHT22 Sensor Parameters
+
+- `temperature`: A nested configuration object for temperature-specific settings
+  - `name`: The name for the temperature component
+  - `unit`: Temperature unit, either "C" for Celsius or "F" for Fahrenheit
+- `humidity`: A nested configuration object for humidity-specific settings
+  - `name`: The name for the humidity component
+
 ### OLED Display Parameters
 
 - `scl_pin`: The GPIO pin number for the SCL (clock) line
 - `sda_pin`: The GPIO pin number for the SDA (data) line
 - `width`: Display width in pixels
 - `height`: Display height in pixels
-- `address`: I2C address of the display (in hex format, e.g., "0x3C")
+- `address`: I2C address of the display (in hex format, e.g., "0x3C" or as an integer)
 
 ### Button Parameters
 

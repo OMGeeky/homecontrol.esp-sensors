@@ -33,7 +33,7 @@ def main():
     # Initialize a DHT22 sensor with configuration
     dht_sensor = DHT22Sensor(
         # This will load config for this sensor type
-        sensor_config=config,  # Pass the loaded config
+        sensor_config=dht_config,  # Pass the sensor-specific config
     )
     print(
         f"Created DHT22 sensor: {dht_sensor.name}, pin: {dht_sensor.pin}, interval: {dht_sensor.interval}s"
@@ -48,7 +48,7 @@ def main():
         name="Custom Display",
         interval=1,  # Update every second
         # Other parameters will be loaded from config
-        config=config,
+        display_config=get_display_config("oled", config),
     )
     print(
         f"Created OLED display: {display.name}, size: {display.width}x{display.height}, interval: {display.interval}s"

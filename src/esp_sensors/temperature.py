@@ -31,7 +31,7 @@ class TemperatureSensor(Sensor):
         """
         if sensor_config is None:
             sensor_config = {}
-        # Initialize base class with sensor_type for configuration loading
+        # Initialize base class with sensor_config for configuration
         super().__init__(name, pin, interval, sensor_config=sensor_config)
 
         # Load configuration if not provided in parameters

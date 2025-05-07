@@ -10,6 +10,9 @@ This module provides a class for interfacing with SSD1306 OLED displays via I2C 
 - Display a list of values (e.g., sensor readings)
 - Simulation mode for testing without hardware
 - Integration with the ESP Sensors framework
+- Configuration-based initialization
+- Inherits from the Sensor class for consistent API
+- Support for both integer and hex string I2C addresses
 
 ## Hardware Requirements
 
@@ -37,6 +40,25 @@ display = OLEDDisplay(
     height=64,   # Display height in pixels
     address=0x3C # I2C address (default: 0x3C)
 )
+```
+
+### Configuration-Based Initialization
+
+```python
+from esp_sensors.oled_display import OLEDDisplay
+
+# Initialize using configuration
+display_config = {
+    "name": "Status Display",
+    "scl_pin": 22,
+    "sda_pin": 21,
+    "width": 128,
+    "height": 64,
+    "address": "0x3C",  # Can be a hex string
+    "interval": 30
+}
+
+display = OLEDDisplay(display_config=display_config)
 ```
 
 ### Displaying Text
@@ -86,20 +108,32 @@ display.display_values([
 
 ### Class: OLEDDisplay
 
+Extends the base `Sensor` class to provide OLED display functionality.
+
 #### Constructor
 
 ```python
-OLEDDisplay(name, scl_pin, sda_pin, width=128, height=64, address=0x3C, interval=60)
+OLEDDisplay(
+    name: str = None,
+    scl_pin: int = None,
+    sda_pin: int = None,
+    width: int = None,
+    height: int = None,
+    address: int | str = None,
+    interval: int = None,
+    display_config: Dict[str, Any] = None
+)
 ```
 
 Parameters:
-- `name` (str): The name of the display
-- `scl_pin` (int): The GPIO pin number for the SCL (clock) line
-- `sda_pin` (int): The GPIO pin number for the SDA (data) line
-- `width` (int): Display width in pixels (default: 128)
-- `height` (int): Display height in pixels (default: 64)
-- `address` (int): I2C address of the display (default: 0x3C)
-- `interval` (int): Refresh interval in seconds (default: 60)
+- `name` (str): The name of the display (if None, loaded from config)
+- `scl_pin` (int): The GPIO pin number for the SCL (clock) line (if None, loaded from config)
+- `sda_pin` (int): The GPIO pin number for the SDA (data) line (if None, loaded from config)
+- `width` (int): Display width in pixels (if None, loaded from config)
+- `height` (int): Display height in pixels (if None, loaded from config)
+- `address` (int | str): I2C address of the display, can be an integer or a hex string (if None, loaded from config)
+- `interval` (int): Refresh interval in seconds (if None, loaded from config)
+- `display_config` (Dict[str, Any]): Configuration dictionary (if provided, used instead of loading from file)
 
 #### Methods
 
@@ -136,6 +170,14 @@ Parameters:
 display.display_values(["Line 1", "Line 2", "Line 3"])
 ```
 
+##### read()
+
+Updates the display (placeholder to satisfy Sensor interface).
+
+```python
+display.read()  # Always returns 1.0 to indicate success
+```
+
 ##### get_metadata()
 
 Returns a dictionary containing display metadata.
@@ -144,6 +186,18 @@ Returns a dictionary containing display metadata.
 metadata = display.get_metadata()
 print(metadata)
 ```
+
+The metadata includes:
+- `name`: The name of the display
+- `pin`: The SDA pin number (inherited from Sensor)
+- `interval`: Refresh interval in seconds
+- `scl_pin`: The SCL pin number
+- `sda_pin`: The SDA pin number
+- `width`: Display width in pixels
+- `height`: Display height in pixels
+- `address`: I2C address of the display
+- `type`: Always "SSD1306"
+- `values_count`: Number of values currently displayed
 
 ## Troubleshooting
 
