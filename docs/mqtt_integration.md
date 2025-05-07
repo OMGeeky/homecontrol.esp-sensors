@@ -67,6 +67,8 @@ The JSON payload published to the `data` topic has the following format:
 
 ## Usage
 
+### Automatic Usage
+
 Once configured, the ESP device will automatically publish sensor data to the MQTT broker at the specified interval. No additional code is required.
 
 To enable MQTT publishing:
@@ -74,6 +76,31 @@ To enable MQTT publishing:
 1. Edit the `config.json` file to set `mqtt.enabled` to `true`.
 2. Configure the MQTT broker address and credentials.
 3. Restart the ESP device.
+
+### Programmatic Usage
+
+The MQTT functionality is available as a module that can be imported and used in your own code:
+
+```python
+from esp_sensors.mqtt import setup_mqtt, publish_sensor_data
+from esp_sensors.config import get_mqtt_config, load_config
+
+# Load MQTT configuration
+config = load_config()
+mqtt_config = get_mqtt_config(config)
+
+# Set up MQTT client
+mqtt_client = setup_mqtt(mqtt_config)
+
+# Publish sensor data
+if mqtt_client:
+    publish_sensor_data(mqtt_client, mqtt_config, sensor, temperature, humidity)
+```
+
+The module provides the following functions:
+
+- `setup_mqtt(mqtt_config)`: Sets up and connects to the MQTT broker using the provided configuration. Returns an MQTT client if successful, None otherwise.
+- `publish_sensor_data(client, mqtt_config, sensor, temperature, humidity)`: Publishes sensor data to the MQTT broker. Returns True if successful, False otherwise.
 
 ## Simulation Mode
 
