@@ -1,6 +1,7 @@
 """
 Tests for the OLED display module.
 """
+
 import pytest
 from src.esp_sensors.oled_display import OLEDDisplay
 
@@ -15,20 +16,20 @@ def test_oled_display_initialization():
     assert display.width == 128
     assert display.height == 64
     assert display.address == 0x3C
-    assert display.interval == 1  # Default interval is now 1 in the configuration
+    assert display.interval == 60
     assert display._values == []
 
 
 def test_oled_display_custom_parameters():
     """Test that an OLED display can be initialized with custom parameters."""
     display = OLEDDisplay(
-        "custom_display", 
-        scl_pin=22, 
-        sda_pin=21, 
-        width=64, 
-        height=32, 
-        address=0x3D, 
-        interval=30
+        "custom_display",
+        scl_pin=22,
+        sda_pin=21,
+        width=64,
+        height=32,
+        address=0x3D,
+        interval=30,
     )
     assert display.name == "custom_display"
     assert display.scl_pin == 22
@@ -57,7 +58,7 @@ def test_oled_display_metadata():
     assert metadata["width"] == 128
     assert metadata["height"] == 64
     assert metadata["address"] == 0x3C
-    assert metadata["interval"] == 1  # Default interval is now 1 in the configuration
+    assert metadata["interval"] == 60
     assert metadata["type"] == "SSD1306"
     assert metadata["values_count"] == 0
 

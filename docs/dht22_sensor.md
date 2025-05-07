@@ -62,28 +62,28 @@ import time
 
 # Initialize with custom parameters
 sensor = DHT22Sensor(
-    name="outdoor",
-    pin=5,
-    interval=30,  # Read every 30 seconds
-    unit="F"      # Use Fahrenheit
+  name="outdoor",
+  pin=5,
+  interval=30,  # Read every 30 seconds
+  temperature_unit="F"  # Use Fahrenheit
 )
 
 # Continuous reading
 try:
-    while True:
-        temp = sensor.read()
-        humidity = sensor.read_humidity()
-        
-        # Get metadata
-        metadata = sensor.get_metadata()
-        
-        print(f"Sensor: {metadata['name']}")
-        print(f"Temperature: {temp}°F ({sensor.to_celsius()}°C)")
-        print(f"Humidity: {humidity}%")
-        
-        time.sleep(metadata['interval'])
+  while True:
+    temp = sensor.read()
+    humidity = sensor.read_humidity()
+
+    # Get metadata
+    metadata = sensor.get_metadata()
+
+    print(f"Sensor: {metadata['name']}")
+    print(f"Temperature: {temp}°F ({sensor.to_celsius()}°C)")
+    print(f"Humidity: {humidity}%")
+
+    time.sleep(metadata['interval'])
 except KeyboardInterrupt:
-    print("Monitoring stopped")
+  print("Monitoring stopped")
 ```
 
 ## API Reference

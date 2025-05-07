@@ -1,6 +1,7 @@
 """
 Tests for the temperature sensor module.
 """
+
 import pytest
 from src.esp_sensors.temperature import TemperatureSensor
 

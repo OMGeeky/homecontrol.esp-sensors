@@ -9,15 +9,16 @@ Usage:
     - Ensure config.json is properly set up with DHT22 sensor configuration
     - The script will read temperature and humidity at the specified interval
 """
+
 import time
 import sys
 import os
 
 # Add the src directory to the Python path if needed
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Check if running on MicroPython
-if sys.implementation.name == 'micropython':
+if sys.implementation.name == "micropython":
     from src.esp_sensors.dht22 import DHT22Sensor
     from src.esp_sensors.config import load_config, get_sensor_config
 
@@ -31,7 +32,7 @@ if sys.implementation.name == 'micropython':
         print(f"Sensor pin: {dht_config.get('pin')}")
 
         # Initialize the sensor using configuration
-        sensor = DHT22Sensor(config=config)
+        sensor = DHT22Sensor(sensor_config=config)
 
         print("Starting sensor readings. Press Ctrl+C to stop.")
 
@@ -79,7 +80,7 @@ else:
         print(f"Sensor pin: {dht_config.get('pin')}")
 
         # Initialize the sensor using configuration
-        sensor = DHT22Sensor(config=config)
+        sensor = DHT22Sensor(sensor_config=config)
 
         print("Starting simulated sensor readings. Press Ctrl+C to stop.")
 

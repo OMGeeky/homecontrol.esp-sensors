@@ -5,6 +5,7 @@ This module provides functionality to load and save configuration settings
 from/to a file, making it easy to change parameters like pins, display resolution,
 sensor names, and intervals without modifying the code.
 """
+
 import json
 import os
 from typing import Dict, Any, Optional, Union, List
@@ -15,28 +16,12 @@ DEFAULT_CONFIG_PATH = "config.json"
 # Default configuration values
 DEFAULT_CONFIG = {
     "sensors": {
-        "temperature": {
-            "name": "Temperature Sensor",
-            "pin": 4,
-            "interval": 60,
-            "unit": "C"
-        },
-        "humidity": {
-            "name": "Humidity Sensor",
-            "pin": 4,
-            "interval": 60
-        },
         "dht22": {
             "name": "DHT22 Sensor",
             "pin": 4,
             "interval": 60,
-            "temperature": {
-                "name": "DHT22 Temperature",
-                "unit": "C"
-            },
-            "humidity": {
-                "name": "DHT22 Humidity"
-            }
+            "temperature": {"name": "DHT22 Temperature", "unit": "C"},
+            "humidity": {"name": "DHT22 Humidity"},
         }
     },
     "displays": {
@@ -47,15 +32,10 @@ DEFAULT_CONFIG = {
             "width": 128,
             "height": 64,
             "address": "0x3C",
-            "interval": 1
+            "interval": 1,
         }
     },
-    "buttons": {
-        "main_button": {
-            "pin": 0,
-            "pull_up": True
-        }
-    }
+    "buttons": {"main_button": {"pin": 0, "pull_up": True}},
 }
 
 
@@ -73,11 +53,13 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> Dict[str, Any]:
     """
     try:
         if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 config = json.load(f)
             return config
         else:
-            print(f"Configuration file {config_path} not found. Using default configuration.")
+            print(
+                f"Configuration file {config_path} not found. Using default configuration."
+            )
             return DEFAULT_CONFIG
     except Exception as e:
         print(f"Error loading configuration: {e}. Using default configuration.")
@@ -96,7 +78,7 @@ def save_config(config: Dict[str, Any], config_path: str = DEFAULT_CONFIG_PATH) 
         True if the configuration was saved successfully, False otherwise
     """
     try:
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             json.dump(config, f, indent=4)
         return True
     except Exception as e:
@@ -104,7 +86,9 @@ def save_config(config: Dict[str, Any], config_path: str = DEFAULT_CONFIG_PATH) 
         return False
 
 
-def get_sensor_config(sensor_type: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def get_sensor_config(
+    sensor_type: str, config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """
     Get configuration for a specific sensor type.
 
@@ -126,7 +110,9 @@ def get_sensor_config(sensor_type: str, config: Optional[Dict[str, Any]] = None)
     return sensor_config
 
 
-def get_display_config(display_type: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def get_display_config(
+    display_type: str, config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """
     Get configuration for a specific display type.
 
@@ -148,7 +134,9 @@ def get_display_config(display_type: str, config: Optional[Dict[str, Any]] = Non
     return display_config
 
 
-def get_button_config(button_name: str = "main_button", config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def get_button_config(
+    button_name: str = "main_button", config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """
     Get configuration for a specific button.
 
@@ -168,8 +156,6 @@ def get_button_config(button_name: str = "main_button", config: Optional[Dict[st
         button_config = DEFAULT_CONFIG.get("buttons", {}).get(button_name, {})
 
     return button_config
-
-
 
 
 def create_default_config(config_path: str = DEFAULT_CONFIG_PATH) -> bool:

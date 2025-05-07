@@ -1,6 +1,7 @@
 """
 Humidity sensor module for ESP-based sensors.
 """
+
 import random
 from typing import Dict, Any, Optional
 from .sensor import Sensor
@@ -10,8 +11,14 @@ from .config import get_sensor_config
 class HumiditySensor(Sensor):
     """Humidity sensor implementation."""
 
-    def __init__(self, name: str = None, pin: int = None, interval: int = None, 
-                 sensor_type: str = None, config: Dict[str, Any] = None, **kwargs):
+    def __init__(
+        self,
+        name: str = None,
+        pin: int = None,
+        interval: int = None,
+        sensor_config: Dict[str, Any] = None,
+        **kwargs,
+    ):
         """
         Initialize a new humidity sensor.
 
@@ -19,12 +26,13 @@ class HumiditySensor(Sensor):
             name: The name of the sensor (if None, loaded from config)
             pin: The GPIO pin number the sensor is connected to (if None, loaded from config)
             interval: Reading interval in seconds (if None, loaded from config)
-            sensor_type: Type of the sensor for loading config (e.g., 'humidity')
-            config: Configuration dictionary (if provided, used instead of loading from file)
+            sensor_config: Sensor-Configuration dictionary (if provided, used instead of loading from file)
             **kwargs: Additional keyword arguments to pass to the parent class
         """
+        if sensor_config is None:
+            sensor_config = {}
         # Initialize base class with sensor_type for configuration loading
-        super().__init__(name, pin, interval, sensor_type=sensor_type or "humidity", config=config)
+        super().__init__(name, pin, interval, sensor_config=sensor_config)
         self._last_humidity = None
 
     def read_humidity(self) -> float:

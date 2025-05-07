@@ -1,6 +1,7 @@
 """
 Tests for the DHT22 sensor module.
 """
+
 import pytest
 from src.esp_sensors.dht22 import DHT22Sensor
 from src.esp_sensors.config import get_sensor_config
@@ -9,7 +10,7 @@ from src.esp_sensors.config import get_sensor_config
 def test_dht22_sensor_initialization():
     """Test that a DHT22 sensor can be initialized with valid parameters."""
     # Test direct parameter initialization
-    sensor = DHT22Sensor(name="test_sensor", pin=5, interval=30, unit="C")
+    sensor = DHT22Sensor(name="test_sensor", pin=5, interval=30, temperature_unit="C")
     assert sensor.name == "test_sensor"
     assert sensor.pin == 5
     assert sensor.interval == 30
@@ -18,23 +19,14 @@ def test_dht22_sensor_initialization():
 
     # Test initialization with custom config
     test_config = {
-        "sensors": {
-            "dht22": {
-                "name": "config_sensor",
-                "pin": 6,
-                "interval": 40,
-                "temperature": {
-                    "name": "Config Temperature",
-                    "unit": "F"
-                },
-                "humidity": {
-                    "name": "Config Humidity"
-                }
-            }
-        }
+        "name": "config_sensor",
+        "pin": 6,
+        "interval": 40,
+        "temperature": {"name": "Config Temperature", "unit": "F"},
+        "humidity": {"name": "Config Humidity"},
     }
 
-    config_sensor = DHT22Sensor(config=test_config)
+    config_sensor = DHT22Sensor(sensor_config=test_config)
     assert config_sensor.name == "config_sensor"
     assert config_sensor.pin == 6
     assert config_sensor.interval == 40
@@ -45,7 +37,7 @@ def test_dht22_sensor_initialization():
 def test_dht22_sensor_invalid_unit():
     """Test that initializing with an invalid unit raises a ValueError."""
     with pytest.raises(ValueError):
-        DHT22Sensor(name="test_sensor", pin=5, interval=30, unit="K")
+        DHT22Sensor(name="test_sensor", pin=5, interval=30, temperature_unit="K")
 
 
 def test_dht22_sensor_read_temperature():
@@ -68,7 +60,7 @@ def test_dht22_sensor_read_humidity():
 
 def test_dht22_sensor_fahrenheit():
     """Test that a sensor initialized with Fahrenheit returns appropriate values."""
-    sensor = DHT22Sensor(name="test_sensor", pin=5, unit="F")
+    sensor = DHT22Sensor(name="test_sensor", pin=5, temperature_unit="F")
     reading = sensor.read()
     assert isinstance(reading, float)
     # For Fahrenheit, the reading should be between 59.0 and 86.0
@@ -78,13 +70,13 @@ def test_dht22_sensor_fahrenheit():
 def test_dht22_temperature_conversion():
     """Test temperature conversion methods."""
     # Test Celsius to Fahrenheit
-    c_sensor = DHT22Sensor(name="celsius_sensor", pin=5, unit="C")
+    c_sensor = DHT22Sensor(name="celsius_sensor", pin=5, temperature_unit="C")
     c_sensor._last_reading = 20.0  # Manually set for testing
     f_value = c_sensor.to_fahrenheit()
     assert f_value == 68.0  # 20°C = 68°F
 
     # Test Fahrenheit to Celsius
-    f_sensor = DHT22Sensor(name="fahrenheit_sensor", pin=5, unit="F")
+    f_sensor = DHT22Sensor(name="fahrenheit_sensor", pin=5, temperature_unit="F")
     f_sensor._last_reading = 68.0  # Manually set for testing
     c_value = f_sensor.to_celsius()
     assert c_value == 20.0  # 68°F = 20°C
@@ -92,7 +84,7 @@ def test_dht22_temperature_conversion():
 
 def test_dht22_metadata():
     """Test that metadata includes the temperature unit, humidity, and type."""
-    sensor = DHT22Sensor(name="test_sensor", pin=5, unit="C")
+    sensor = DHT22Sensor(name="test_sensor", pin=5, temperature_unit="C")
     metadata = sensor.get_metadata()
     assert metadata["name"] == "test_sensor"
     assert metadata["pin"] == 5

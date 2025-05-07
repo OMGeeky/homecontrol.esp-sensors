@@ -1,11 +1,14 @@
 """
 OLED display module for ESP32 using SSD1306 controller.
 """
+
 import time
 from typing import Dict, Any, Optional
+
 try:
     from machine import Pin, I2C
     import ssd1306
+
     SIMULATION = False
 except ImportError:
     SIMULATION = True
@@ -17,9 +20,17 @@ from .config import get_display_config
 class OLEDDisplay(Sensor):
     """SSD1306 OLED display implementation."""
 
-    def __init__(self, name: str = None, scl_pin: int = None, sda_pin: int = None, 
-                 width: int = None, height: int = None, address: str = None, 
-                 interval: int = None, config: Dict[str, Any] = None):
+    def __init__(
+        self,
+        name: str = None,
+        scl_pin: int = None,
+        sda_pin: int = None,
+        width: int = None,
+        height: int = None,
+        address: int | str = None,
+        interval: int = None,
+        display_config: Dict[str, Any] = None,
+    ):
         """
         Initialize a new OLED display.
 
@@ -31,21 +42,26 @@ class OLEDDisplay(Sensor):
             height: Display height in pixels (if None, loaded from config)
             address: I2C address of the display (if None, loaded from config)
             interval: Refresh interval in seconds (if None, loaded from config)
-            config: Configuration dictionary (if provided, used instead of loading from file)
+            display_config: Configuration dictionary
         """
-        # Load configuration if needed
-        display_config = get_display_config("oled", config)
+
+        if display_config is None:
+            display_config = {}
 
         # Get parameters from config if not provided
         name = name if name is not None else display_config.get("name", "OLED Display")
         sda_pin = sda_pin if sda_pin is not None else display_config.get("sda_pin", 21)
-        interval = interval if interval is not None else display_config.get("interval", 60)
+        interval = (
+            interval if interval is not None else display_config.get("interval", 60)
+        )
 
         # Initialize base class with the pin parameter
         super().__init__(name=name, pin=sda_pin, interval=interval)
 
         # Set display-specific parameters
-        self.scl_pin = scl_pin if scl_pin is not None else display_config.get("scl_pin", 22)
+        self.scl_pin = (
+            scl_pin if scl_pin is not None else display_config.get("scl_pin", 22)
+        )
         self.sda_pin = sda_pin  # Already set above
         self.width = width if width is not None else display_config.get("width", 128)
         self.height = height if height is not None else display_config.get("height", 64)

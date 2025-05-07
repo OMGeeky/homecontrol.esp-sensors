@@ -1,6 +1,7 @@
 """
 Temperature sensor module for ESP-based sensors.
 """
+
 import random
 from typing import Dict, Any, Optional
 from .sensor import Sensor
@@ -10,8 +11,14 @@ from .config import get_sensor_config
 class TemperatureSensor(Sensor):
     """Temperature sensor implementation."""
 
-    def __init__(self, name: str = None, pin: int = None, interval: int = None, 
-                 unit: str = None, config: Dict[str, Any] = None):
+    def __init__(
+        self,
+        name: str = None,
+        pin: int = None,
+        interval: int = None,
+        unit: str = None,
+        sensor_config: Dict[str, Any] = None,
+    ):
         """
         Initialize a new temperature sensor.
 
@@ -20,14 +27,15 @@ class TemperatureSensor(Sensor):
             pin: The GPIO pin number the sensor is connected to (if None, loaded from config)
             interval: Reading interval in seconds (if None, loaded from config)
             unit: Temperature unit, either "C" or "F" (if None, loaded from config)
-            config: Configuration dictionary (if provided, used instead of loading from file)
+            sensor_config: Sensor-Configuration dictionary (if provided, used instead of loading from file)
         """
+        if sensor_config is None:
+            sensor_config = {}
         # Initialize base class with sensor_type for configuration loading
-        super().__init__(name, pin, interval, sensor_type="temperature", config=config)
+        super().__init__(name, pin, interval, sensor_config=sensor_config)
 
         # Load configuration if not provided in parameters
         if unit is None:
-            sensor_config = get_sensor_config("temperature", config)
             unit = sensor_config.get("unit", "C")
 
         # Validate unit

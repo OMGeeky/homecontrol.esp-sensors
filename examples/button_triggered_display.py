@@ -7,21 +7,28 @@ This example demonstrates how to:
 3. Wake up and read sensor data when the button is pressed
 4. Display the data on an OLED screen
 """
+
 import time
 import sys
 import os
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.esp_sensors.oled_display import OLEDDisplay
 from src.esp_sensors.dht22 import DHT22Sensor
-from src.esp_sensors.config import load_config, get_sensor_config, get_display_config, get_button_config
+from src.esp_sensors.config import (
+    load_config,
+    get_sensor_config,
+    get_display_config,
+    get_button_config,
+)
 
 # Import hardware-specific modules if available (for ESP32/ESP8266)
 try:
     from machine import Pin, deepsleep
     import esp32
+
     SIMULATION = False
 except ImportError:
     # Simulation mode for development on non-ESP hardware
@@ -31,10 +38,12 @@ except ImportError:
 
 def simulate_button_press():
     """Simulate a button press in simulation mode."""
-    print("\nPress Enter to simulate a button press (or 'q' to quit, Ctrl+C to exit)...")
+    print(
+        "\nPress Enter to simulate a button press (or 'q' to quit, Ctrl+C to exit)..."
+    )
     try:
         user_input = input()
-        if user_input.lower() == 'q':
+        if user_input.lower() == "q":
             return False
         return True
     except KeyboardInterrupt:
@@ -49,16 +58,14 @@ def main():
     config = load_config()
 
     # Initialize a DHT22 sensor using configuration
-    dht_sensor = DHT22Sensor(
-        config=config  # Pass the loaded config
-    )
+    dht_sensor = DHT22Sensor(sensor_config=config)  # Pass the loaded config
     print(f"Initialized DHT22 sensor: {dht_sensor.name}, pin: {dht_sensor.pin}")
 
     # Initialize an OLED display using configuration
-    display = OLEDDisplay(
-        config=config  # Pass the loaded config
+    display = OLEDDisplay(config=config)  # Pass the loaded config
+    print(
+        f"Initialized OLED display: {display.name}, size: {display.width}x{display.height}"
     )
-    print(f"Initialized OLED display: {display.name}, size: {display.width}x{display.height}")
 
     # Set up button using configuration
     button_config = get_button_config("main_button", config)
@@ -88,7 +95,9 @@ def main():
                     # Go to light sleep mode to save power
                     # Wake up on pin change (button press)
                     print("Entering light sleep mode...")
-                    esp32.wake_on_ext0(pin=button, level=0)  # Wake on button press (low)
+                    esp32.wake_on_ext0(
+                        pin=button, level=0
+                    )  # Wake on button press (low)
                     esp32.light_sleep()  # Light sleep preserves RAM but saves power
                     # When we get here, the button was pressed
 
@@ -105,13 +114,9 @@ def main():
             name_str = f"Sensor: {dht_sensor.name}"
 
             # Display values
-            display.display_values([
-                name_str,
-                temp_str,
-                hum_str,
-                time_str,
-                "Press button again"
-            ])
+            display.display_values(
+                [name_str, temp_str, hum_str, time_str, "Press button again"]
+            )
 
             # Print to console
             print(f"Updated display with: {temp_str}, {hum_str}")
