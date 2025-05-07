@@ -2,6 +2,7 @@
 DHT22 temperature and humidity sensor module for ESP32.
 """
 import time
+from typing import Dict, Any, Optional
 try:
     import dht
     from machine import Pin
@@ -12,24 +13,48 @@ except ImportError:
 
 from .temperature import TemperatureSensor
 from .humidity import HumiditySensor
+from .config import get_sensor_config
 
 
 class DHT22Sensor(TemperatureSensor, HumiditySensor):
     """DHT22 temperature and humidity sensor implementation."""
 
-    def __init__(self, name: str, pin: int, interval: int = 60, unit: str = "C"):
+    def __init__(self, name: str = None, pin: int = None, interval: int = None, 
+                 unit: str = None, sensor_type: str = "dht22", config: Dict[str, Any] = None):
         """
         Initialize a new DHT22 sensor.
 
         Args:
-            name: The name of the sensor
-            pin: The GPIO pin number the sensor is connected to
-            interval: Reading interval in seconds (default: 60)
-            unit: Temperature unit, either "C" for Celsius or "F" for Fahrenheit (default: "C")
+            name: The name of the sensor (if None, loaded from config)
+            pin: The GPIO pin number the sensor is connected to (if None, loaded from config)
+            interval: Reading interval in seconds (if None, loaded from config)
+            unit: Temperature unit, either "C" or "F" (if None, loaded from config)
+            sensor_type: Type of the sensor for loading config (default: 'dht22')
+            config: Configuration dictionary (if provided, used instead of loading from file)
         """
+        # Load configuration
+        sensor_config = get_sensor_config(sensor_type, config)
+
+        # Get main parameters from config if not provided
+        self.name = name if name is not None else sensor_config.get('name', 'DHT22 Sensor')
+        self.pin = pin if pin is not None else sensor_config.get('pin', 0)
+        self.interval = interval if interval is not None else sensor_config.get('interval', 60)
+
+        # Get temperature configuration
+        temp_config = sensor_config.get('temperature', {})
+        temp_name = temp_config.get('name', self.name + ' Temperature')
+        temp_unit = unit if unit is not None else temp_config.get('unit', 'C')
+
+        # Get humidity configuration
+        humidity_config = sensor_config.get('humidity', {})
+        humidity_name = humidity_config.get('name', self.name + ' Humidity')
+
         # Initialize both parent classes
-        TemperatureSensor.__init__(self, name, pin, interval, unit)
-        HumiditySensor.__init__(self, name, pin, interval)
+        TemperatureSensor.__init__(self, name=temp_name, pin=self.pin, interval=self.interval, unit=temp_unit)
+        HumiditySensor.__init__(self, name=humidity_name, pin=self.pin, interval=self.interval)
+
+        # Store the original sensor name (it gets overwritten by HumiditySensor.__init__)
+        self.name = name if name is not None else sensor_config.get('name', 'DHT22 Sensor')
 
         # Initialize the sensor if not in simulation mode
         if not SIMULATION:
@@ -117,6 +142,8 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
 
         # Combine metadata from both parent classes
         metadata = {**temp_metadata, **humidity_metadata}
+        # Ensure the name is the main sensor name, not the humidity sensor name
+        metadata["name"] = self.name
         metadata["type"] = "DHT22"
         return metadata
 

@@ -15,7 +15,7 @@ def test_oled_display_initialization():
     assert display.width == 128
     assert display.height == 64
     assert display.address == 0x3C
-    assert display.interval == 60
+    assert display.interval == 1  # Default interval is now 1 in the configuration
     assert display._values == []
 
 
@@ -57,7 +57,7 @@ def test_oled_display_metadata():
     assert metadata["width"] == 128
     assert metadata["height"] == 64
     assert metadata["address"] == 0x3C
-    assert metadata["interval"] == 60
+    assert metadata["interval"] == 1  # Default interval is now 1 in the configuration
     assert metadata["type"] == "SSD1306"
     assert metadata["values_count"] == 0
 
@@ -65,15 +65,15 @@ def test_oled_display_metadata():
 def test_oled_display_values():
     """Test that display values are stored correctly."""
     display = OLEDDisplay("test_display", scl_pin=22, sda_pin=21)
-    
+
     # Test with empty values
     assert display._values == []
-    
+
     # Test with string values
     test_values = ["Temperature: 25.0°C", "Humidity: 45.0%"]
     display.display_values(test_values)
     assert display._values == test_values
-    
+
     # Check that metadata reflects the number of values
     metadata = display.get_metadata()
     assert metadata["values_count"] == 2
@@ -82,10 +82,10 @@ def test_oled_display_values():
 def test_oled_display_clear():
     """Test that clearing the display works in simulation mode."""
     display = OLEDDisplay("test_display", scl_pin=22, sda_pin=21)
-    
+
     # This is mostly a coverage test since we can't check the actual display in tests
     display.clear()
-    
+
     # Verify that clearing doesn't affect stored values
     test_values = ["Temperature: 25.0°C"]
     display.display_values(test_values)
@@ -96,10 +96,10 @@ def test_oled_display_clear():
 def test_oled_display_text():
     """Test that displaying text works in simulation mode."""
     display = OLEDDisplay("test_display", scl_pin=22, sda_pin=21)
-    
+
     # This is mostly a coverage test since we can't check the actual display in tests
     display.display_text("Hello, World!")
-    
+
     # Verify that displaying text doesn't affect stored values
     test_values = ["Temperature: 25.0°C"]
     display.display_values(test_values)

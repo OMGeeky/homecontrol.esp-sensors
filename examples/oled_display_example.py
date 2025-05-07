@@ -1,5 +1,6 @@
 """
 Example usage of the OLED display with temperature and humidity sensors.
+This example demonstrates how to use the configuration system to initialize sensors and displays.
 """
 import time
 import sys
@@ -10,29 +11,44 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from src.esp_sensors.oled_display import OLEDDisplay
 from src.esp_sensors.dht22 import DHT22Sensor
+from src.esp_sensors.config import load_config, get_sensor_config, get_display_config
 
 
 def main():
     """
     Main function to demonstrate OLED display usage with sensors.
     """
-    # Initialize a DHT22 sensor
-    dht_sensor = DHT22Sensor(
-        name="Living Room",
-        pin=4,  # GPIO pin for DHT22 data
-        interval=5,  # Read every 5 seconds
-        unit="C"  # Celsius
-    )
+    # Load configuration from file
+    print("Loading configuration from config.json...")
+    config = load_config()
 
-    # Initialize an OLED display
-    display = OLEDDisplay(
-        name="Status Display",
-        scl_pin=22,  # GPIO pin for I2C clock
-        sda_pin=21,  # GPIO pin for I2C data
-        width=128,   # Display width in pixels
-        height=64,   # Display height in pixels
-        interval=1   # Update every second
+    # Method 1: Initialize sensors using configuration directly
+    print("\nMethod 1: Initialize using configuration directly")
+
+    # Get configuration for DHT22 sensor
+    dht_config = get_sensor_config("dht22", config)
+    print(f"DHT22 config: {dht_config}")
+
+    # Initialize a DHT22 sensor with configuration
+    dht_sensor = DHT22Sensor(
+        sensor_type="dht22",  # This will load config for this sensor type
+        config=config         # Pass the loaded config
     )
+    print(f"Created DHT22 sensor: {dht_sensor.name}, pin: {dht_sensor.pin}, interval: {dht_sensor.interval}s")
+
+    # Method 2: Initialize with some parameters from config, others specified directly
+    print("\nMethod 2: Override some config parameters")
+
+    # Initialize an OLED display with some custom parameters
+    display = OLEDDisplay(
+        # These parameters will override the config values
+        name="Custom Display",
+        interval=1,  # Update every second
+
+        # Other parameters will be loaded from config
+        config=config
+    )
+    print(f"Created OLED display: {display.name}, size: {display.width}x{display.height}, interval: {display.interval}s")
 
     # Display initialization message
     display.clear()

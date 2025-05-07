@@ -12,6 +12,7 @@ import sys
 
 from esp_sensors.oled_display import OLEDDisplay
 from esp_sensors.dht22 import DHT22Sensor
+from esp_sensors.config import load_config, get_button_config
 
 # Import hardware-specific modules if available (for ESP32/ESP8266)
 try:
@@ -40,28 +41,25 @@ def main():
     """
     Main function to demonstrate button-triggered sensor display.
     """
-    # Initialize a DHT22 sensor
+    # Load configuration
+    config = load_config()
+    button_config = get_button_config("main_button", config)
+
+    # Initialize a DHT22 sensor using configuration
     dht_sensor = DHT22Sensor(
-        name="Living Room",
-        pin=4,  # GPIO pin for DHT22 data
-        interval=5,  # Read every 5 seconds
-        unit="C"  # Celsius
+        config=config  # Pass the loaded config
     )
 
-    # Initialize an OLED display
+    # Initialize an OLED display using configuration
     display = OLEDDisplay(
-        name="Status Display",
-        scl_pin=22,  # GPIO pin for I2C clock
-        sda_pin=21,  # GPIO pin for I2C data
-        width=128,   # Display width in pixels
-        height=64,   # Display height in pixels
-        interval=1   # Update every second
+        config=config  # Pass the loaded config
     )
 
-    # Set up button on GPIO pin 0 (common button pin on many ESP boards)
-    button_pin = 0
+    # Set up button using configuration
+    button_pin = button_config.get("pin", 0)
     if not SIMULATION:
-        button = Pin(button_pin, Pin.IN, Pin.PULL_UP)
+        pull_up = button_config.get("pull_up", True)
+        button = Pin(button_pin, Pin.IN, Pin.PULL_UP if pull_up else None)
 
     # Display initialization message
     display.clear()

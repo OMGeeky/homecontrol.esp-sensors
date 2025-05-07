@@ -2,6 +2,7 @@
 OLED display module for ESP32 using SSD1306 controller.
 """
 import time
+from typing import Dict, Any, Optional
 try:
     from machine import Pin, I2C
     import ssd1306
@@ -10,35 +11,57 @@ except ImportError:
     SIMULATION = True
 
 from .sensor import Sensor
+from .config import get_display_config
 
 
 class OLEDDisplay(Sensor):
     """SSD1306 OLED display implementation."""
 
-    def __init__(self, name: str, scl_pin: int, sda_pin: int, width: int = 128, height: int = 64, 
-                 address: int = 0x3C, interval: int = 60):
+    def __init__(self, name: str = None, scl_pin: int = None, sda_pin: int = None, 
+                 width: int = None, height: int = None, address: str = None, 
+                 interval: int = None, config: Dict[str, Any] = None):
         """
         Initialize a new OLED display.
 
         Args:
-            name: The name of the display
-            scl_pin: The GPIO pin number for the SCL (clock) line
-            sda_pin: The GPIO pin number for the SDA (data) line
-            width: Display width in pixels (default: 128)
-            height: Display height in pixels (default: 64)
-            address: I2C address of the display (default: 0x3C)
-            interval: Refresh interval in seconds (default: 60)
+            name: The name of the display (if None, loaded from config)
+            scl_pin: The GPIO pin number for the SCL (clock) line (if None, loaded from config)
+            sda_pin: The GPIO pin number for the SDA (data) line (if None, loaded from config)
+            width: Display width in pixels (if None, loaded from config)
+            height: Display height in pixels (if None, loaded from config)
+            address: I2C address of the display (if None, loaded from config)
+            interval: Refresh interval in seconds (if None, loaded from config)
+            config: Configuration dictionary (if provided, used instead of loading from file)
         """
-        # Use sda_pin as the pin parameter for the Sensor base class
-        super().__init__(name, sda_pin, interval)
-        
-        self.scl_pin = scl_pin
-        self.sda_pin = sda_pin
-        self.width = width
-        self.height = height
-        self.address = address
+        # Load configuration if needed
+        display_config = get_display_config("oled", config)
+
+        # Get parameters from config if not provided
+        name = name if name is not None else display_config.get("name", "OLED Display")
+        sda_pin = sda_pin if sda_pin is not None else display_config.get("sda_pin", 21)
+        interval = interval if interval is not None else display_config.get("interval", 60)
+
+        # Initialize base class with the pin parameter
+        super().__init__(name=name, pin=sda_pin, interval=interval)
+
+        # Set display-specific parameters
+        self.scl_pin = scl_pin if scl_pin is not None else display_config.get("scl_pin", 22)
+        self.sda_pin = sda_pin  # Already set above
+        self.width = width if width is not None else display_config.get("width", 128)
+        self.height = height if height is not None else display_config.get("height", 64)
+
+        # Handle address (could be string in config)
+        if address is None:
+            address = display_config.get("address", "0x3C")
+
+        # Convert address to int if it's a hex string
+        if isinstance(address, str) and address.startswith("0x"):
+            self.address = int(address, 16)
+        else:
+            self.address = address
+
         self._values = []
-        
+
         # Initialize the display if not in simulation mode
         if not SIMULATION:
             try:
@@ -91,7 +114,7 @@ class OLEDDisplay(Sensor):
             values: List of values to display (strings or objects with __str__ method)
         """
         self._values = values
-        
+
         if SIMULATION:
             print("Simulated OLED display values:")
             for i, value in enumerate(values):
@@ -99,12 +122,12 @@ class OLEDDisplay(Sensor):
         else:
             if self._display:
                 self._display.fill(0)  # Clear the display
-                
+
                 # Display each value on a new line (8 pixels per line)
                 for i, value in enumerate(values):
                     if i * 10 < self.height:  # Make sure we don't go off the screen
                         self._display.text(str(value), 0, i * 10, 1)
-                
+
                 self._display.show()
 
     def read(self) -> float:

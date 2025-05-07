@@ -2,25 +2,38 @@
 Temperature sensor module for ESP-based sensors.
 """
 import random
+from typing import Dict, Any, Optional
 from .sensor import Sensor
+from .config import get_sensor_config
 
 
 class TemperatureSensor(Sensor):
     """Temperature sensor implementation."""
 
-    def __init__(self, name: str, pin: int, interval: int = 60, unit: str = "C"):
+    def __init__(self, name: str = None, pin: int = None, interval: int = None, 
+                 unit: str = None, config: Dict[str, Any] = None):
         """
         Initialize a new temperature sensor.
 
         Args:
-            name: The name of the sensor
-            pin: The GPIO pin number the sensor is connected to
-            interval: Reading interval in seconds (default: 60)
-            unit: Temperature unit, either "C" for Celsius or "F" for Fahrenheit (default: "C")
+            name: The name of the sensor (if None, loaded from config)
+            pin: The GPIO pin number the sensor is connected to (if None, loaded from config)
+            interval: Reading interval in seconds (if None, loaded from config)
+            unit: Temperature unit, either "C" or "F" (if None, loaded from config)
+            config: Configuration dictionary (if provided, used instead of loading from file)
         """
-        super().__init__(name, pin, interval)
+        # Initialize base class with sensor_type for configuration loading
+        super().__init__(name, pin, interval, sensor_type="temperature", config=config)
+
+        # Load configuration if not provided in parameters
+        if unit is None:
+            sensor_config = get_sensor_config("temperature", config)
+            unit = sensor_config.get("unit", "C")
+
+        # Validate unit
         if unit not in ["C", "F"]:
             raise ValueError("Unit must be either 'C' or 'F'")
+
         self.unit = unit
 
     def read_temperature(self) -> float:
