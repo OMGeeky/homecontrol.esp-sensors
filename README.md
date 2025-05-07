@@ -76,12 +76,15 @@ print(f"Humidity: {humidity}%")
 Example scripts are provided in the `examples/` directory:
 
 - `examples/dht22_example.py`: Demonstrates how to use the DHT22 sensor
+- `examples/button_triggered_display.py`: Shows how to create an energy-efficient sensor display that activates on button press
+- `examples/oled_display_example.py`: Demonstrates how to use the OLED display
 
 ## Documentation
 
 Detailed documentation for each sensor is available in the `docs/` directory:
 
 - [DHT22 Sensor Documentation](docs/dht22_sensor.md)
+- [ESP32 Deployment Guide](docs/esp32_deployment_guide.md)
 
 ## Development
 
