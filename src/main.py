@@ -96,13 +96,21 @@ def main():
     # Initialize a DHT22 sensor using configuration
     dht_sensor = DHT22Sensor(sensor_config=dht_config)
 
-    connect_wifi(network_config)
-
     # Initialize an OLED display using configuration
     display = OLEDDisplay(display_config=display_config)
+    display.clear()
+    display.display_text("Initializing...")
+
+    # Initialize wifi connection
+    display.clear()
+    display.display_text("Connecting to WiFi...")
+    connect_wifi(network_config)
 
     # Set up MQTT client if enabled
+    display.clear()
+    display.display_text("Setting up MQTT...")
     mqtt_client = setup_mqtt(mqtt_config)
+    # mqtt_client = None
     mqtt_publish_interval = mqtt_config.get("publish_interval", 60)
 
     # # Set up button using configuration
@@ -111,42 +119,26 @@ def main():
     #     pull_up = button_config.get("pull_up", True)
     #     button = Pin(button_pin, Pin.IN, Pin.PULL_UP if pull_up else None)
     #
-    # # Display initialization message
-    display.clear()
-    display.display_text("Ready - Auto & Button", 0, 0)
     print(f"System initialized. Will run every {mqtt_publish_interval} seconds or on button press...")
 
     # Main loop - sleep until button press, then read and display sensor data
     try:
         # while True:
         print('sleeping for 5 seconds for debugging')
+        display.clear()
+        display.display_text('debug sleeping')
         time.sleep(5)
 
         # Read sensor values
+        display.clear()
+        display.display_text("Reading sensor values...")
         temperature = dht_sensor.read_temperature()
         humidity = dht_sensor.read_humidity()
-        #
-        # # Format values for display
-        temp_str = f"Temp: {temperature:.1f} C"
-        hum_str = f"Humidity: {humidity:.1f}%"
-        time_str = f"Time: {time.time():.0f}"
-        name_str = f"Sensor: {dht_sensor.name}"
-
-        # Display values
-        # TODO: only display values, if the button has been clicked
-        display.display_values(
-            [name_str, temp_str, hum_str, time_str, "Press button again"]
-        )
-        time.sleep(3)
-
-        # Print to console
-        print('='*20)
-        print(f"Sensor data: {temp_str}, {hum_str}")
-        print('='*20)
 
         # Publish to MQTT
+        display.clear()
+        display.display_values(['Publishing to MQTT...', '', mqtt_client.server, mqtt_client.port])
         publish_sensor_data(mqtt_client, mqtt_config, dht_sensor, temperature, humidity)
-
         if mqtt_client:
             try:
                 mqtt_client.disconnect()
@@ -154,12 +146,33 @@ def main():
             except Exception as e:
                 print(f"Error disconnecting MQTT client: {e}")
 
+        # # Format values for display
+        name_str = f"Sensor: {dht_sensor.name}"
+        temp_str = f"Temp: {temperature:.1f} C"
+        hum_str = f"Humidity: {humidity:.1f}%"
+        time_str = f"Time: {time.time():.0f}"
+
+        # Display values
+        ## TODO: only display values, if the button has been clicked
+        display.clear()
+        display.display_values(
+            [name_str, '', temp_str, hum_str, time_str, "Press button again"]
+        )
+        time.sleep(display.on_time)
+
+        # Print to console
+        print('='*20)
+        print(f"{temp_str}, {hum_str}")
+        print('='*20)
+
+
+
         time_until_next_read = mqtt_publish_interval - (time.time() - last_read_time)
         print('sleeping for', time_until_next_read, 'seconds')
         if not SIMULATION:
             deepsleep(time_until_next_read * 1000)
         else:
-            # Simulate deep sleep
+            # Simulate sleep
             print(f"Simulated deep sleep for {time_until_next_read:.1f} seconds")
             time.sleep(time_until_next_read)
 

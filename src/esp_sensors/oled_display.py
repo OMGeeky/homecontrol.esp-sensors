@@ -83,8 +83,18 @@ class OLEDDisplay(Sensor):
         # Initialize the display if not in simulation mode
         if not SIMULATION:
             try:
-                i2c = I2C(0, scl=Pin(scl_pin), sda=Pin(sda_pin))
-                self._display = ssd1306.SSD1306_I2C(width, height, i2c, addr=address)
+                print("Initializing OLED display...")
+                print(f"  SCL pin: {self.scl_pin }, SDA pin: {self.sda_pin}")
+                # print('initializing scl pin', type(self.scl_pin), self.scl_pin)
+                scl = Pin(self.scl_pin)
+                # print('initializing sda pin', type(self.sda_pin), self.sda_pin)
+                sda = Pin(self.sda_pin)
+                # print('initializing i2c')
+                i2c = I2C(scl=scl, sda=sda)
+                print(f"  I2C bus: {i2c}")
+                # print('i2c scan:', i2c.scan())
+                print(f"  I2C address: {self.address}")
+                self._display = ssd1306.SSD1306_I2C(self.width, self.height, i2c, addr=self.address)
                 self._display.fill(0)  # Clear the display
                 self._display.text("Initialized", 0, 0, 1)
                 self._display.show()
