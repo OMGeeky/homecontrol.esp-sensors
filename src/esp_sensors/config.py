@@ -49,6 +49,7 @@ DEFAULT_CONFIG = {
     "network": {
         "ssid": "<your ssid>",
         "password": "<your password>",
+        "timeout": 10,
     }
 }
 

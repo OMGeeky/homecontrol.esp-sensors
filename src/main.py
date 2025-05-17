@@ -96,10 +96,7 @@ def main():
     # Initialize a DHT22 sensor using configuration
     dht_sensor = DHT22Sensor(sensor_config=dht_config)
 
-    if network_config.get("ssid"):
-        ssid = network_config.get("ssid")
-        password = network_config.get("password")
-        connect_wifi(ssid, password)
+    connect_wifi(network_config)
 
     # Initialize an OLED display using configuration
     display = OLEDDisplay(display_config=display_config)
@@ -185,8 +182,15 @@ def main():
         print("Program terminated by user")
 
 
-def connect_wifi(ssid, password):
+def connect_wifi(network_config: dict):
     import network
+    ssid = network_config.get("ssid")
+    password = network_config.get("password")
+    timeout = network_config.get("timeout", 10)
+    if not ssid or not password:
+        print("SSID and password are required for WiFi connection")
+        return False
+
     print(f'Connecting to WIFI: "{ssid}"')
     # Connect to your network
     station = network.WLAN(network.STA_IF)
@@ -195,12 +199,13 @@ def connect_wifi(ssid, password):
     connection_start_time = time.time()
     while not station.isconnected():
         # Check if connection attempt has timed out
-        if time.time() - connection_start_time > 10:
+        if time.time() - connection_start_time > timeout:
             print("Connection timed out")
             return False
         pass
     print('Connection successful')
     print(station.ifconfig())
+    return True
 
 
 if __name__ == "__main__":
