@@ -4,3 +4,4 @@ config.json
 /deploy/upload/
 /deploy/last_upload/
 /deploy/actual_upload/
+__pycache__

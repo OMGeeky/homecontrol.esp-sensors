@@ -10,7 +10,7 @@ import json
 
 # Import hardware-specific modules if available (for ESP32/ESP8266)
 try:
-    from umqtt.simple import MQTTClient
+    from umqtt.robust import MQTTClient
 
     SIMULATION = False
 except ImportError:

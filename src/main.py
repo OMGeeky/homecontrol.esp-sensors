@@ -98,19 +98,13 @@ def main():
 
     # Initialize an OLED display using configuration
     display = OLEDDisplay(display_config=display_config)
-    display.clear()
-    display.display_text("Initializing...")
+    # display.clear()
+    name_str = f"N: {dht_sensor.name}"
+    display.set_header(name_str)
+    display.set_status("Initializing...")
 
-    # Initialize wifi connection
-    display.clear()
-    display.display_text("Connecting to WiFi...")
-    connect_wifi(network_config)
-
-    # Set up MQTT client if enabled
-    display.clear()
-    display.display_text("Setting up MQTT...")
-    mqtt_client = setup_mqtt(mqtt_config)
     # mqtt_client = None
+    mqtt_enabled = mqtt_config.get("enabled", False)
     mqtt_publish_interval = mqtt_config.get("publish_interval", 60)
 
     # # Set up button using configuration
@@ -124,41 +118,19 @@ def main():
     # Main loop - sleep until button press, then read and display sensor data
     try:
         # while True:
-        print('sleeping for 5 seconds for debugging')
-        display.clear()
-        display.display_text('debug sleeping')
-        time.sleep(5)
+        # print('sleeping for 5 seconds for debugging')
+        # display.set_status('debug sleeping')
+        # time.sleep(5)
 
         # Read sensor values
-        display.clear()
-        display.display_text("Reading sensor values...")
+        display.set_status("Reading sensor values...")
         temperature = dht_sensor.read_temperature()
         humidity = dht_sensor.read_humidity()
 
-        # Publish to MQTT
-        display.clear()
-        display.display_values(['Publishing to MQTT...', '', mqtt_client.server, mqtt_client.port])
-        publish_sensor_data(mqtt_client, mqtt_config, dht_sensor, temperature, humidity)
-        if mqtt_client:
-            try:
-                mqtt_client.disconnect()
-                print("MQTT client disconnected")
-            except Exception as e:
-                print(f"Error disconnecting MQTT client: {e}")
-
         # # Format values for display
-        name_str = f"Sensor: {dht_sensor.name}"
         temp_str = f"Temp: {temperature:.1f} C"
         hum_str = f"Humidity: {humidity:.1f}%"
         time_str = f"Time: {time.time():.0f}"
-
-        # Display values
-        ## TODO: only display values, if the button has been clicked
-        display.clear()
-        display.display_values(
-            [name_str, '', temp_str, hum_str, time_str, "Press button again"]
-        )
-        time.sleep(display.on_time)
 
         # Print to console
         print('='*20)
@@ -166,8 +138,37 @@ def main():
         print('='*20)
 
 
+        # Display values
+        ## TODO: only display values, if the button has been clicked
+        display.display_values(
+            [temp_str, hum_str, time_str]
+        )
+
+        # Publish to MQTT
+        if mqtt_enabled:
+            # Initialize wifi connection
+            display.set_status("Connecting WiFi...")
+            connect_wifi(network_config)
+
+            # Set up MQTT client if enabled
+            display.set_status("Setting up MQTT...")
+            mqtt_client = setup_mqtt(mqtt_config)
+            display.set_status("Publishing to MQTT...")
+            # display.display_values([mqtt_client.server, mqtt_client.port])
+            publish_sensor_data(mqtt_client, mqtt_config, dht_sensor, temperature, humidity)
+            try:
+                if mqtt_client:
+                    mqtt_client.disconnect()
+                    print("MQTT client disconnected")
+            except Exception as e:
+                print(f"Error disconnecting MQTT client: {e}")
+
+        display.set_status("...")
+        # sleep, to be able to do something, before going into deepsleep
+        time.sleep(display.on_time)
 
         time_until_next_read = mqtt_publish_interval - (time.time() - last_read_time)
+        display.set_status(f"Sleeping {time_until_next_read}s")
         print('sleeping for', time_until_next_read, 'seconds')
         if not SIMULATION:
             deepsleep(time_until_next_read * 1000)
@@ -175,7 +176,6 @@ def main():
             # Simulate sleep
             print(f"Simulated deep sleep for {time_until_next_read:.1f} seconds")
             time.sleep(time_until_next_read)
-
 
     except KeyboardInterrupt:
         # Clean up on exit
@@ -222,4 +222,11 @@ def connect_wifi(network_config: dict):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        time.sleep(5) # give time to read the error message and respond
+        deepsleep(1) # dummy deepsleep to basically reset the system
+
+
