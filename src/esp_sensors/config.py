@@ -7,8 +7,6 @@ sensor names, and intervals without modifying the code.
 """
 
 import json
-import os
-from typing import Dict, Any, Optional, Union, List
 
 # Default configuration file path
 DEFAULT_CONFIG_PATH = "config.json"
@@ -48,10 +46,14 @@ DEFAULT_CONFIG = {
         "ssl": False,
         "keepalive": 60,
     },
+    "network": {
+        "ssid": "<your ssid>",
+        "password": "<your password>",
+    }
 }
 
 
-def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> Dict[str, Any]:
+def load_config(config_path: str = DEFAULT_CONFIG_PATH) :
     """
     Load configuration from a JSON file.
 
@@ -64,43 +66,18 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> Dict[str, Any]:
     If the file doesn't exist or can't be read, returns the default configuration.
     """
     try:
-        if os.path.exists(config_path):
-            with open(config_path, "r") as f:
-                config = json.load(f)
-            return config
-        else:
-            print(
-                f"Configuration file {config_path} not found. Using default configuration."
-            )
-            return DEFAULT_CONFIG
+        with open(config_path, "r") as f:
+            print(f"Loading configuration from '{config_path}'")
+            config = json.load(f)
+        return config
     except Exception as e:
         print(f"Error loading configuration: {e}. Using default configuration.")
         return DEFAULT_CONFIG
 
 
-def save_config(config: Dict[str, Any], config_path: str = DEFAULT_CONFIG_PATH) -> bool:
-    """
-    Save configuration to a JSON file.
-
-    Args:
-        config: Configuration dictionary to save
-        config_path: Path to the configuration file (default: config.json)
-
-    Returns:
-        True if the configuration was saved successfully, False otherwise
-    """
-    try:
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
-        return True
-    except Exception as e:
-        print(f"Error saving configuration: {e}")
-        return False
-
-
 def get_sensor_config(
-    sensor_type: str, config: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    sensor_type: str, config: dict | None = None
+) -> dict:
     """
     Get configuration for a specific sensor type.
 
@@ -123,8 +100,8 @@ def get_sensor_config(
 
 
 def get_display_config(
-    display_type: str, config: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    display_type: str, config: dict | None = None
+) -> dict:
     """
     Get configuration for a specific display type.
 
@@ -147,8 +124,8 @@ def get_display_config(
 
 
 def get_button_config(
-    button_name: str = "main_button", config: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    button_name: str = "main_button", config: dict | None = None
+) -> dict:
     """
     Get configuration for a specific button.
 
@@ -170,7 +147,7 @@ def get_button_config(
     return button_config
 
 
-def get_mqtt_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def get_mqtt_config(config: dict | None = None) -> dict:
     """
     Get MQTT configuration.
 
@@ -189,16 +166,3 @@ def get_mqtt_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         mqtt_config = DEFAULT_CONFIG.get("mqtt", {})
 
     return mqtt_config
-
-
-def create_default_config(config_path: str = DEFAULT_CONFIG_PATH) -> bool:
-    """
-    Create a default configuration file.
-
-    Args:
-        config_path: Path to the configuration file (default: config.json)
-
-    Returns:
-        True if the configuration was created successfully, False otherwise
-    """
-    return save_config(DEFAULT_CONFIG, config_path)

@@ -2,9 +2,6 @@
 DHT22 temperature and humidity sensor module for ESP32.
 """
 
-import time
-from typing import Dict, Any, Optional
-
 try:
     import dht
     from machine import Pin
@@ -29,7 +26,7 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
         pin: int = None,
         interval: int = None,
         temperature_unit: str = None,
-        sensor_config: Dict[str, Any] = None,
+        sensor_config: dict | None = None,
     ):
         """
         Initialize a new DHT22 sensor.
@@ -67,7 +64,10 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
 
         # Initialize the sensor if not in simulation mode
         if not SIMULATION:
-            self._sensor = dht.DHT22(Pin(pin))
+            print("Initializing DHT22 sensor...")
+            pin1 = Pin(self.pin)
+            self._sensor = dht.DHT22(pin1)
+            print(f"DHT22 sensor initialized on pin {pin1}")
 
     def apply_parameters(self, interval, name, pin, sensor_config):
         # Get main parameters from config if not provided
@@ -160,7 +160,10 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
         humidity_metadata = HumiditySensor.get_metadata(self)
 
         # Combine metadata from both parent classes
-        metadata = {**temp_metadata, **humidity_metadata}
+        metadata = {}
+        metadata.update(temp_metadata)
+        metadata.update(humidity_metadata)
+        # metadata = {**temp_metadata, **humidity_metadata}
         # Ensure the name is the main sensor name, not the humidity sensor name
         metadata["name"] = self.name
         metadata["type"] = "DHT22"

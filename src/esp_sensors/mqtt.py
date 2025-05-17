@@ -7,7 +7,6 @@ It supports both real hardware and simulation mode.
 
 import time
 import json
-from typing import Dict, Any, Optional, Union
 
 # Import hardware-specific modules if available (for ESP32/ESP8266)
 try:
@@ -56,7 +55,7 @@ except ImportError:
             return
 
 
-def setup_mqtt(mqtt_config: Dict[str, Any]) -> Optional[MQTTClient]:
+def setup_mqtt(mqtt_config: dict) -> MQTTClient | None:
     """
     Set up and connect to the MQTT broker.
 
@@ -92,9 +91,9 @@ def setup_mqtt(mqtt_config: Dict[str, Any]) -> Optional[MQTTClient]:
 
 
 def publish_sensor_data(
-    client: Optional[MQTTClient],
-    mqtt_config: Dict[str, Any],
-    sensor: Any,
+    client: MQTTClient | None,
+    mqtt_config: dict,
+    sensor,
     temperature: float,
     humidity: float,
 ) -> bool:

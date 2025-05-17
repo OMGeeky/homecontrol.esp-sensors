@@ -202,34 +202,6 @@ custom_display_config = {
 display = OLEDDisplay(display_config=custom_display_config)
 ```
 
-## Saving Configuration
-
-You can save a configuration to a file using the `save_config` function:
-
-```python
-from src.esp_sensors.config import save_config
-
-# Save configuration to the default path (config.json)
-save_config(config)
-
-# Or specify a custom path
-save_config(config, "custom_config.json")
-```
-
-## Creating Default Configuration
-
-To create a default configuration file:
-
-```python
-from src.esp_sensors.config import create_default_config
-
-# Create a default configuration file at the default path (config.json)
-create_default_config()
-
-# Or specify a custom path
-create_default_config("custom_config.json")
-```
-
 ## Configuration Parameters
 
 ### Common Parameters

@@ -3,7 +3,6 @@ Humidity sensor module for ESP-based sensors.
 """
 
 import random
-from typing import Dict, Any, Optional
 from .sensor import Sensor
 from .config import get_sensor_config
 
@@ -16,7 +15,7 @@ class HumiditySensor(Sensor):
         name: str = None,
         pin: int = None,
         interval: int = None,
-        sensor_config: Dict[str, Any] = None,
+        sensor_config: dict | None = None,
         **kwargs,
     ):
         """

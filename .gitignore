@@ -1,2 +1,6 @@
 .idea/workspace.xml
 config.json
+/deploy/code/
+/deploy/upload/
+/deploy/last_upload/
+/deploy/actual_upload/

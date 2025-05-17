@@ -2,8 +2,6 @@
 Base sensor module for ESP-based sensors.
 """
 
-from typing import Dict, Any, Optional
-from .config import get_sensor_config
 
 
 class Sensor:
@@ -14,7 +12,7 @@ class Sensor:
         name: str = None,
         pin: int = None,
         interval: int = None,
-        sensor_config: Dict[str, Any] = None,
+        sensor_config = None,
     ):
         """
         Initialize a new sensor.
@@ -37,7 +35,7 @@ class Sensor:
             interval if interval is not None else sensor_config.get("interval", 60)
         )
 
-        self._last_reading: Optional[float] = None
+        self._last_reading= None
 
     def read(self) -> float:
         """
@@ -51,7 +49,7 @@ class Sensor:
         self._last_reading = 0.0
         return self._last_reading
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) :
         """
         Get sensor metadata.
 

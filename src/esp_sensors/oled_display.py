@@ -2,9 +2,6 @@
 OLED display module for ESP32 using SSD1306 controller.
 """
 
-import time
-from typing import Dict, Any, Optional
-
 try:
     from machine import Pin, I2C
     import ssd1306
@@ -30,7 +27,7 @@ class OLEDDisplay(Sensor):
         address: int | str = None,
         interval: int = None,
         on_time: int = None,
-        display_config: Dict[str, Any] = None,
+        display_config = None,
     ):
         """
         Initialize a new OLED display.

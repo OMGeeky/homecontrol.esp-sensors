@@ -3,7 +3,6 @@ Temperature sensor module for ESP-based sensors.
 """
 
 import random
-from typing import Dict, Any, Optional
 from .sensor import Sensor
 from .config import get_sensor_config
 
@@ -17,7 +16,7 @@ class TemperatureSensor(Sensor):
         pin: int = None,
         interval: int = None,
         unit: str = None,
-        sensor_config: Dict[str, Any] = None,
+        sensor_config: dict | None = None,
     ):
         """
         Initialize a new temperature sensor.
