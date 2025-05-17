@@ -10,9 +10,6 @@ UPLOAD_TARGET_DIR=
 
 echo "preparing for deployment"
 mkdir -p "$UPLOAD_SOURCE_DIR"
-# move the last upload directory to a backup to be able to compare the changes and only upload the changes
-rm -rf "$LAST_UPLOAD_DIR"
-mv "$UPLOAD_SOURCE_DIR" "$LAST_UPLOAD_DIR"
 
 mkdir -p "$UPLOAD_SOURCE_DIR"
 mkdir -p "$LAST_UPLOAD_DIR"
@@ -64,3 +61,10 @@ fi
 echo "Deploying to ESP32 on port '$ESP_PORT'"
 # TODO: clear storage, if -f flag is passed in?
 ampy --port "$ESP_PORT" put "$ACTUAL_UPLOAD_SOURCE_DIR"/ "$UPLOAD_TARGET_DIR"/
+if [ $? -ne 0 ]; then
+  echo "Error: Deployment failed. Please check the connection and try again."
+  exit 1
+fi
+# move the the current upload directory to a backup to be able to compare the changes and only upload the changes
+rm -rf "$LAST_UPLOAD_DIR"
+mv "$UPLOAD_SOURCE_DIR" "$LAST_UPLOAD_DIR"
