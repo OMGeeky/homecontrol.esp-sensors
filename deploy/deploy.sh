@@ -43,7 +43,7 @@ else
       cp "$file" "$ACTUAL_UPLOAD_SOURCE_DIR/$relative_path"
     fi
   done
-  # TODO: remove files that are no longer in the upload directory but were in the last upload directory
+  # TODO: consider removing files that are no longer in the upload directory but were in the last upload directory
 #   for file in $(find "$LAST_UPLOAD_DIR" -type f); do
 #     relative_path="${file#$LAST_UPLOAD_DIR/}"
 #     if [[ ! -f "$UPLOAD_SOURCE_DIR/$relative_path" ]]; then
