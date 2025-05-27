@@ -199,7 +199,8 @@ class OLEDDisplay(Sensor):
             status: The status message to display
         """
         self.set_line_text(STATUS_LINE, status)
-        self._display.show()
+        if self._display:
+            self._display.show()
 
     # endregion
 
