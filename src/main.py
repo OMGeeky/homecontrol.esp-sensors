@@ -144,6 +144,8 @@ def main():
             [temp_str, hum_str, time_str]
         )
 
+        display.set_status("")
+
         # Publish to MQTT
         if mqtt_enabled:
             # Initialize wifi connection
@@ -152,18 +154,22 @@ def main():
 
             # Set up MQTT client if enabled
             display.set_status("Setting up MQTT...")
+            print(f"MQTT enabled: {mqtt_enabled}, broker: {mqtt_config.get('broker')}")
             mqtt_client = setup_mqtt(mqtt_config)
             display.set_status("Publishing to MQTT...")
+            print(f"Publishing sensor data to MQTT at {mqtt_config.get('broker')}:{mqtt_config.get('port')}")
             # display.display_values([mqtt_client.server, mqtt_client.port])
             publish_sensor_data(mqtt_client, mqtt_config, dht_sensor, temperature, humidity)
+            print("Sensor data published to MQTT")
             try:
                 if mqtt_client:
                     mqtt_client.disconnect()
                     print("MQTT client disconnected")
             except Exception as e:
                 print(f"Error disconnecting MQTT client: {e}")
+        else:
+            print("MQTT is disabled, not publishing data")
 
-        display.set_status("...")
         # sleep, to be able to do something, before going into deepsleep
         time.sleep(display.on_time)
 
