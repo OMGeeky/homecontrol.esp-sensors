@@ -100,6 +100,7 @@ class OLEDDisplay(Sensor):
                 # print('i2c scan:', i2c.scan())
                 print(f"  I2C address: {self.address}")
                 self._display = ssd1306.SSD1306_I2C(self.width, self.height, i2c, addr=self.address)
+                print(f"  Display initialized: {self._display}")
                 self._display.fill(0)  # Clear the display
                 self._display.text("Initialized", 0, 0, 1)
                 self._display.show()
