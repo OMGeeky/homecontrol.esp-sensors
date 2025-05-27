@@ -16,7 +16,7 @@ DEFAULT_CONFIG = {
     "sensors": {
         "dht22": {
             "name": "DHT22 Sensor",
-            "pin": 4,
+            "pin": 16,
             "interval": 60,
             "temperature": {"name": "DHT22 Temperature", "unit": "C"},
             "humidity": {"name": "DHT22 Humidity"},
