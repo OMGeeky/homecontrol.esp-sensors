@@ -130,7 +130,7 @@ def publish_sensor_data(
         data = {
             "temperature": temperature,
             "humidity": humidity,
-            "timestamp": time.time(),
+            "uptime": time.time(),
             "unit": sensor.unit,
         }
         client.publish(data_topic, json.dumps(data).encode())
