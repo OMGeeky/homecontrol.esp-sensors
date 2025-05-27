@@ -1,12 +1,12 @@
-#pip install adafruit-ampy
+#pip install rshell
 CODE_DIR="src/"
-LIBS_DIR=deploy/upload
+LIBS_DIR=deploy/libs/
 CONFIG_FILE=deploy/config.json
 
 LAST_UPLOAD_DIR=deploy/last_upload
 UPLOAD_SOURCE_DIR=deploy/upload
 ACTUAL_UPLOAD_SOURCE_DIR=deploy/actual_upload
-UPLOAD_TARGET_DIR=
+UPLOAD_TARGET_DIR=/pyboard/
 
 echo "preparing for deployment"
 mkdir -p "$UPLOAD_SOURCE_DIR"
@@ -60,7 +60,7 @@ fi
 
 echo "Deploying to ESP32 on port '$ESP_PORT'"
 # TODO: clear storage, if -f flag is passed in?
-ampy --port "$ESP_PORT" put "$ACTUAL_UPLOAD_SOURCE_DIR"/ "$UPLOAD_TARGET_DIR"/
+rshell -p "$ESP_PORT" "cp -r $ACTUAL_UPLOAD_SOURCE_DIR/* $UPLOAD_TARGET_DIR"
 if [ $? -ne 0 ]; then
   echo "Error: Deployment failed. Please check the connection and try again."
   exit 1

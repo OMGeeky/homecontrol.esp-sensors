@@ -60,11 +60,11 @@ You'll need to install the following libraries on your ESP32:
 - `ssd1306.py` for the OLED display
 - `dht.py` for the DHT22 sensor
 
-You can use a tool like `ampy` or `rshell` to upload these libraries:
+You can use `rshell` to upload these libraries:
 
-1. **Install ampy**:
+1. **Install rshell**:
    ```bash
-   pip install adafruit-ampy
+   pip install rshell
    ```
 
 2. **Download the required libraries**:
@@ -73,7 +73,7 @@ You can use a tool like `ampy` or `rshell` to upload these libraries:
 
 3. **Upload the SSD1306 library** (if not already included in firmware):
    ```bash
-   ampy --port /dev/ttyUSB0 put ssd1306.py
+   rshell -p /dev/ttyUSB0 cp ssd1306.py /pyboard/
    ```
 
 ## Deploying the Code to ESP32
@@ -99,17 +99,28 @@ You can use a tool like `ampy` or `rshell` to upload these libraries:
 
 4. **Upload the files to ESP32**:
    ```bash
-   # Upload the esp_sensors package
-   ampy --port /dev/ttyUSB0 mkdir esp_sensors
-   ampy --port /dev/ttyUSB0 put deploy/esp_sensors/__init__.py esp_sensors/__init__.py
-   ampy --port /dev/ttyUSB0 put deploy/esp_sensors/sensor.py esp_sensors/sensor.py
-   ampy --port /dev/ttyUSB0 put deploy/esp_sensors/temperature.py esp_sensors/temperature.py
-   ampy --port /dev/ttyUSB0 put deploy/esp_sensors/humidity.py esp_sensors/humidity.py
-   ampy --port /dev/ttyUSB0 put deploy/esp_sensors/dht22.py esp_sensors/dht22.py
-   ampy --port /dev/ttyUSB0 put deploy/esp_sensors/oled_display.py esp_sensors/oled_display.py
+   # Connect to the ESP32
+   rshell -p /dev/ttyUSB0
+
+   # Inside rshell, create directory and copy files
+   mkdir /pyboard/esp_sensors
+   cp deploy/esp_sensors/__init__.py /pyboard/esp_sensors/
+   cp deploy/esp_sensors/sensor.py /pyboard/esp_sensors/
+   cp deploy/esp_sensors/temperature.py /pyboard/esp_sensors/
+   cp deploy/esp_sensors/humidity.py /pyboard/esp_sensors/
+   cp deploy/esp_sensors/dht22.py /pyboard/esp_sensors/
+   cp deploy/esp_sensors/oled_display.py /pyboard/esp_sensors/
 
    # Upload the main script (will run automatically on boot)
-   ampy --port /dev/ttyUSB0 put deploy/main.py
+   cp deploy/main.py /pyboard/
+
+   # Exit rshell
+   exit
+   ```
+
+   Alternatively, you can use a single command to copy all files:
+   ```bash
+   rshell -p /dev/ttyUSB0 "mkdir -p /pyboard/esp_sensors; cp -r deploy/esp_sensors/* /pyboard/esp_sensors/; cp deploy/main.py /pyboard/"
    ```
 
 ## Running the Application
@@ -118,8 +129,11 @@ You can use a tool like `ampy` or `rshell` to upload these libraries:
 
 2. **Monitor the output** (optional):
    ```bash
-   ampy --port /dev/ttyUSB0 run main.py
+   rshell -p /dev/ttyUSB0 repl
    ```
+   This will open the REPL (Read-Eval-Print Loop) interface where you can see the output.
+   (Press Ctrl+X to exit the REPL)
+
    Or use a serial monitor:
    ```bash
    screen /dev/ttyUSB0 115200
