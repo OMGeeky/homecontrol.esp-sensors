@@ -167,10 +167,8 @@ def main():
 
                 # Disconnect MQTT client after both operations
                 try:
-                    display.set_status("Disconnecting MQTT...")
-                    print("Disconnecting MQTT client...")
-                    time.sleep(2) # wait for MQTT to finish publishing?
                     mqtt_client.disconnect()
+                    display.set_status("MQTT disconnected")
                     print("MQTT client disconnected")
                 except Exception as e:
                     print(f"Error disconnecting MQTT client: {e}")

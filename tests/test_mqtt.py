@@ -15,7 +15,7 @@ class TestSensor:
 
     def __init__(self, name="Test Sensor", temperature_unit="C"):
         self.name = name
-        self.temperature_unit = temperature_unit
+        self.unit = temperature_unit
 
 
 @pytest.fixture
@@ -32,6 +32,7 @@ def mqtt_config():
         "publish_interval": 30,
         "ssl": False,
         "keepalive": 60,
+        "use_esp32_client": True,
     }
 
 
@@ -41,6 +42,7 @@ def disabled_mqtt_config():
     return {
         "enabled": False,
         "broker": "test.mosquitto.org",
+        "use_esp32_client": True,
     }
 
 
@@ -58,7 +60,7 @@ def test_setup_mqtt_disabled(disabled_mqtt_config):
 
 def test_setup_mqtt_enabled(mqtt_config):
     """Test that setup_mqtt creates and connects a client when MQTT is enabled."""
-    with patch("src.esp_sensors.mqtt.MQTTClient") as mock_mqtt_client:
+    with patch("src.esp_sensors.mqtt.ESP32MQTTClient") as mock_mqtt_client:
         # Configure the mock
         mock_client_instance = MagicMock()
         mock_mqtt_client.return_value = mock_client_instance
@@ -86,7 +88,7 @@ def test_setup_mqtt_enabled(mqtt_config):
 
 def test_setup_mqtt_connection_error(mqtt_config):
     """Test that setup_mqtt handles connection errors gracefully."""
-    with patch("src.esp_sensors.mqtt.MQTTClient") as mock_mqtt_client:
+    with patch("src.esp_sensors.mqtt.ESP32MQTTClient") as mock_mqtt_client:
         # Configure the mock to raise an exception on connect
         mock_client_instance = MagicMock()
         mock_client_instance.connect.side_effect = Exception("Connection failed")
@@ -134,7 +136,7 @@ def test_publish_sensor_data_success(mqtt_config, mock_sensor):
             data = json.loads(call_args[0][1].decode())
             assert data["temperature"] == temperature
             assert data["humidity"] == humidity
-            assert data["unit"] == mock_sensor.temperature_unit
+            assert data["unit"] == mock_sensor.unit
             assert "timestamp" in data
             break
     else:
