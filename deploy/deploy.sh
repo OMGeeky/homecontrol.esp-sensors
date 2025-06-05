@@ -16,8 +16,8 @@ mkdir -p "$LAST_UPLOAD_DIR"
 cp -r "$CODE_DIR"* "$UPLOAD_SOURCE_DIR"
 cp "$CONFIG_FILE" "$UPLOAD_SOURCE_DIR"
 
-# check if the flag -libs is set and copy the libraries to the upload directory
-if [[ "$1" == "-libs" ]]; then
+# check if the flag -libs or -a is set and copy the libraries to the upload directory
+if [[ "$1" == "-libs" || "$1" == "-a" ]]; then
   echo "Copying libraries to upload directory"
   mkdir -p "$UPLOAD_SOURCE_DIR/lib"
   cp -r "$LIBS_DIR"* "$UPLOAD_SOURCE_DIR/lib"
@@ -27,7 +27,7 @@ fi
 # check what files have changed and only upload the changed files (use $ACTUAL_UPLOAD_SOURCE_DIR for the changed files)
 rm -rf "$ACTUAL_UPLOAD_SOURCE_DIR"
 mkdir -p "$ACTUAL_UPLOAD_SOURCE_DIR"
-if [[ "$1" == "-f" ]]; then
+if [[ "$1" == "-f" || "$1" == "-a" ]]; then
   echo "Force copying all files"
   cp -r "$UPLOAD_SOURCE_DIR"/* "$ACTUAL_UPLOAD_SOURCE_DIR"
 else
@@ -60,7 +60,7 @@ fi
 
 echo "Deploying to ESP32 on port '$ESP_PORT'"
 # TODO: clear storage, if -f flag is passed in?
-rshell -p "$ESP_PORT" "cp -r $ACTUAL_UPLOAD_SOURCE_DIR/* $UPLOAD_TARGET_DIR"
+rshell -p "$ESP_PORT" "rsync $ACTUAL_UPLOAD_SOURCE_DIR/ $UPLOAD_TARGET_DIR"
 if [ $? -ne 0 ]; then
   echo "Error: Deployment failed. Please check the connection and try again."
   exit 1
