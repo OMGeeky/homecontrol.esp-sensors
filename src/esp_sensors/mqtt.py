@@ -124,10 +124,6 @@ class MQTTClient:
 
     def _send_packet(self, packet_type, payload=b''):
         """Send an MQTT packet to the broker"""
-        if SIMULATION:
-            print(f"[MQTT SIM] Sending packet type: {packet_type:02x}, payload: {payload}")
-            return
-
         if self.sock is None:
             raise MQTTException("Not connected to broker (_send_packet)")
 
@@ -270,8 +266,6 @@ class MQTTClient:
 
     def ping(self):
         """Send PINGREQ to keep the connection alive"""
-        if SIMULATION:
-            return
 
         if self.connected:
             self._send_packet(PINGREQ)
@@ -378,13 +372,6 @@ class MQTTClient:
 
     def check_msg(self):
         """Check for pending messages from the broker"""
-        if SIMULATION:
-            # In simulation mode, we simulate message checking
-            if self.last_message and self.callback:
-                self.callback(self.last_topic, self.last_message)
-                self.last_message = None
-                self.last_topic = None
-            return
 
         if not self.connected:
             return
