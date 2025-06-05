@@ -275,8 +275,9 @@ def save_config_to_file(config: dict, config_path: str = DEFAULT_CONFIG_PATH) ->
         True if saving was successful, False otherwise
     """
     try:
+        config_json = json.dumps(config)
         with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
+            f.write(config_json)
         print(f"Configuration saved to '{config_path}'")
         return True
     except Exception as e:
