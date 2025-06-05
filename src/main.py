@@ -187,7 +187,7 @@ def main():
             print("MQTT is disabled, not publishing data")
 
         # sleep, to be able to do something, before going into deepsleep
-        time.sleep(display.on_time)
+        # time.sleep(display.on_time)
 
         time_until_next_read = config.update_interval - (time.time() - last_read_time)
         if time_until_next_read < 0:
