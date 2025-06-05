@@ -40,6 +40,9 @@ except ImportError:
             self.keepalive = keepalive
             self.ssl = ssl
             self.connected = False
+            self.callback = None
+            self.last_message = None
+            self.last_topic = None
 
         def connect(self):
             print(f"[MQTT] Connecting to {self.server}:{self.port} as {self.client_id}")
@@ -50,9 +53,30 @@ except ImportError:
             print("[MQTT] Disconnected")
             self.connected = False
 
-        def publish(self, topic, msg):
-            print(f"[MQTT] Publishing to {topic}: {msg}")
+        def publish(self, topic, msg, retain=False):
+            retain_str = " (retained)" if retain else ""
+            print(f"[MQTT] Publishing to {topic}{retain_str}: {msg}")
             return
+
+        def set_callback(self, callback):
+            self.callback = callback
+            print(f"[MQTT] Callback set")
+
+        def check_msg(self):
+            """Simulate checking for messages"""
+            if self.last_message and self.callback:
+                self.callback(self.last_topic, self.last_message)
+                self.last_message = None
+                self.last_topic = None
+            return
+
+        # For simulation only - allows us to simulate receiving a message
+        def simulate_message(self, topic, msg):
+            self.last_topic = topic
+            self.last_message = msg
+            print(f"[MQTT] Simulated message received on {topic}: {msg}")
+            if self.callback:
+                self.callback(topic, msg)
 
 
 def setup_mqtt(mqtt_config: dict) -> MQTTClient | None:
@@ -188,18 +212,40 @@ def check_config_update(client: MQTTClient | None, mqtt_config: dict, current_co
         return current_config
 
     try:
+        # Variable to store the received configuration
+        received_config = None
+
+        # Define callback function to handle incoming messages
+        def config_callback(topic, msg):
+            nonlocal received_config
+            try:
+                # Parse the message as JSON
+                config_data = json.loads(msg.decode('utf-8'))
+                print(f"Received configuration from MQTT: version {config_data.get('version', 0)}")
+                received_config = config_data
+            except Exception as e:
+                print(f"Error parsing configuration message: {e}")
+
+        # Set the callback
+        client.set_callback(config_callback)
+
         # Subscribe to the configuration topic
         if not subscribe_to_config(client, mqtt_config):
             return current_config
 
-        # In a real implementation, we would:
-        # 1. Set up a callback to handle the message
-        # 2. Wait for a message (with timeout)
-        # 3. Parse the message as JSON
-        # 4. Check if the version is newer than the current version
-        # 5. If it is, update the local configuration and save it
+        # Check for retained messages (will be processed by the callback)
+        print("Checking for retained configuration messages...")
+        client.check_msg()
 
-        print("MQTT configuration update check not implemented yet")
+        # Wait a short time for any retained messages to be processed
+        time.sleep(0.5)
+        client.check_msg()
+
+        # If we received a configuration and its version is newer, return it
+        if received_config and received_config.get("version", 0) > current_config.get("version", 0):
+            print(f"Found newer configuration (version {received_config.get('version')})")
+            return received_config
+
         return current_config
     except Exception as e:
         print(f"Error checking for configuration updates: {e}")

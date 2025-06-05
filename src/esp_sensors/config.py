@@ -122,7 +122,7 @@ class Config:
         """
         self.config = config
         self.update_configs(config)
-        return save_config(config, self.config_path)
+        return save_config_to_file(config, self.config_path)
 
 def load_config(config_path: str = DEFAULT_CONFIG_PATH) :
     """
@@ -263,7 +263,7 @@ def replace_device_id_placeholders(config_section: dict, device_id: str) -> dict
     return result
 
 
-def save_config(config: dict, config_path: str = DEFAULT_CONFIG_PATH) -> bool:
+def save_config_to_file(config: dict, config_path: str = DEFAULT_CONFIG_PATH) -> bool:
     """
     Save configuration to a JSON file.
 
