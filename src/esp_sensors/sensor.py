@@ -30,6 +30,7 @@ class Sensor:
         self.name = (
             name if name is not None else sensor_config.get("name", "Unnamed Sensor")
         )
+        self.id = sensor_config.get("id", "sensor_" + self.name.lower().replace(" ", "_"))
         self.pin = pin if pin is not None else sensor_config.get("pin", 0)
         self.interval = (
             interval if interval is not None else sensor_config.get("interval", 60)

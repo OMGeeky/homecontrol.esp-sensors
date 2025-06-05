@@ -53,7 +53,7 @@ except ImportError:
             print("[MQTT] Disconnected")
             self.connected = False
 
-        def publish(self, topic, msg, retain=False):
+        def publish(self, topic, msg, retain=False, qos=0):
             retain_str = " (retained)" if retain else ""
             print(f"[MQTT] Publishing to {topic}{retain_str}: {msg}")
             return
@@ -135,6 +135,7 @@ def publish_sensor_data(
         True if publishing was successful, False otherwise
     """
     if client is None:
+        print("MQTT client is not connected")
         return False
 
     try:
@@ -180,6 +181,7 @@ def subscribe_to_config(client: MQTTClient | None, mqtt_config: dict) -> bool:
         True if subscription was successful, False otherwise
     """
     if client is None:
+        print("MQTT client is not connected (subscribe)")
         return False
 
     try:
@@ -237,15 +239,18 @@ def check_config_update(client: MQTTClient | None, mqtt_config: dict, current_co
 
         # Subscribe to the configuration topic
         if not subscribe_to_config(client, mqtt_config):
+            print("Failed to subscribe to configuration topic")
             return current_config
 
         # Check for retained messages (will be processed by the callback)
         print("Checking for retained configuration messages...")
         client.check_msg()
 
+        print("Waiting for configuration updates...")
         # Wait a short time for any retained messages to be processed
         time.sleep(0.5)
         client.check_msg()
+        print("done waiting for configuration updates")
 
         # If we received a configuration and its version is newer, return it
         if received_config and received_config.get("version", 0) > current_config.get("version", 0):
