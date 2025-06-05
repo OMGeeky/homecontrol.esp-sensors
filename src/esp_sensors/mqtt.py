@@ -219,6 +219,12 @@ def check_config_update(client: MQTTClient | None, mqtt_config: dict, current_co
         def config_callback(topic, msg):
             nonlocal received_config
             try:
+                # Verify that the topic matches our expected topic
+                expected_topic = mqtt_config.get("topic_config")
+                if topic.decode('utf-8') != expected_topic:
+                    print(f"Ignoring message from topic {topic.decode('utf-8')} - not matching our config topic {expected_topic}")
+                    return
+
                 # Parse the message as JSON
                 config_data = json.loads(msg.decode('utf-8'))
                 print(f"Received configuration from MQTT: version {config_data.get('version', 0)}")
