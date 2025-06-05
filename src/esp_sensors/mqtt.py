@@ -114,19 +114,19 @@ def publish_sensor_data(
         return False
 
     try:
-        topic_prefix = mqtt_config.get("topic_prefix", "esp/sensors")
-        sensor_name = sensor.name.lower().replace(" ", "_")
+        topic_data_prefix = mqtt_config.get("topic_data_prefix", "/homecontrol/device/data")
+        sensor_id = getattr(sensor, "id", sensor.name.lower().replace(" ", "_"))
 
         # Publish temperature
-        temp_topic = f"{topic_prefix}/{sensor_name}/temperature"
+        temp_topic = f"{topic_data_prefix}/{sensor_id}/temperature"
         client.publish(temp_topic, str(temperature).encode())
 
         # Publish humidity
-        humidity_topic = f"{topic_prefix}/{sensor_name}/humidity"
+        humidity_topic = f"{topic_data_prefix}/{sensor_id}/humidity"
         client.publish(humidity_topic, str(humidity).encode())
 
         # Publish combined data as JSON
-        data_topic = f"{topic_prefix}/{sensor_name}/data"
+        data_topic = f"{topic_data_prefix}/{sensor_id}/data"
         data = {
             "temperature": temperature,
             "humidity": humidity,
@@ -142,3 +142,65 @@ def publish_sensor_data(
     except Exception as e:
         print(f"Failed to publish to MQTT: {e}")
         return False
+
+
+def subscribe_to_config(client: MQTTClient | None, mqtt_config: dict) -> bool:
+    """
+    Subscribe to the configuration topic.
+
+    Args:
+        client: MQTTClient instance
+        mqtt_config: MQTT configuration dictionary
+
+    Returns:
+        True if subscription was successful, False otherwise
+    """
+    if client is None:
+        return False
+
+    try:
+        topic_config = mqtt_config.get("topic_config")
+        if not topic_config:
+            print("No configuration topic specified")
+            return False
+
+        print(f"Subscribing to configuration topic: {topic_config}")
+        client.subscribe(topic_config.encode())
+        return True
+    except Exception as e:
+        print(f"Failed to subscribe to configuration topic: {e}")
+        return False
+
+
+def check_config_update(client: MQTTClient | None, mqtt_config: dict, current_config: dict) -> dict:
+    """
+    Check for configuration updates from MQTT.
+
+    Args:
+        client: MQTTClient instance
+        mqtt_config: MQTT configuration dictionary
+        current_config: Current configuration dictionary
+
+    Returns:
+        Updated configuration dictionary if an update was found, otherwise the current configuration
+    """
+    if client is None or not mqtt_config.get("load_config_from_mqtt", False):
+        return current_config
+
+    try:
+        # Subscribe to the configuration topic
+        if not subscribe_to_config(client, mqtt_config):
+            return current_config
+
+        # In a real implementation, we would:
+        # 1. Set up a callback to handle the message
+        # 2. Wait for a message (with timeout)
+        # 3. Parse the message as JSON
+        # 4. Check if the version is newer than the current version
+        # 5. If it is, update the local configuration and save it
+
+        print("MQTT configuration update check not implemented yet")
+        return current_config
+    except Exception as e:
+        print(f"Error checking for configuration updates: {e}")
+        return current_config

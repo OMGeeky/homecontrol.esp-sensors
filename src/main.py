@@ -13,14 +13,16 @@ import time
 
 from esp_sensors.oled_display import OLEDDisplay
 from esp_sensors.dht22 import DHT22Sensor
-from esp_sensors.mqtt import setup_mqtt, publish_sensor_data
+from esp_sensors.mqtt import setup_mqtt, publish_sensor_data, check_config_update
 from esp_sensors.config import (
     load_config,
     get_button_config,
     get_sensor_config,
     get_display_config,
     get_mqtt_config,
+    save_config,
 )
+from src.esp_sensors.config import Config
 
 # Import hardware-specific modules if available (for ESP32/ESP8266)
 try:
@@ -84,37 +86,56 @@ def main():
     last_read_time = time.time()  # this is to make sure, the sleep time is correct
 
     # Load configuration
-    config = load_config()
-    # print('config: ', config)
-
-    # button_config = get_button_config("main_button", config)
-    mqtt_config = get_mqtt_config(config)
-    dht_config = get_sensor_config("dht22", config)
-    display_config = get_display_config("oled", config)
-    network_config = config.get("network", {})
-
-    # Initialize a DHT22 sensor using configuration
-    dht_sensor = DHT22Sensor(sensor_config=dht_config)
+    config = Config()
 
     # Initialize an OLED display using configuration
-    display = OLEDDisplay(display_config=display_config)
-    # display.clear()
-    name_str = f"N: {dht_sensor.name}"
-    display.set_header(name_str)
+    display = OLEDDisplay(display_config=config.display_config)
+    display.clear()
+    display.set_header(f"Device: {config.device_name}")
     display.set_status("Initializing...")
 
-    # mqtt_client = None
-    mqtt_enabled = mqtt_config.get("enabled", False)
-    mqtt_publish_interval = mqtt_config.get("publish_interval", 60)
+    # Check if we need to update configuration from MQTT
+    mqtt_enabled = config.mqtt_config.get("enabled", False)
+    load_config_from_mqtt = config.mqtt_config.get("load_config_from_mqtt", False)
 
-    # # Set up button using configuration
-    # button_pin = button_config.get("pin", 0)
-    # if not SIMULATION:
-    #     pull_up = button_config.get("pull_up", True)
-    #     button = Pin(button_pin, Pin.IN, Pin.PULL_UP if pull_up else None)
-    #
-    print(f"System initialized. Will run every {mqtt_publish_interval} seconds or on button press...")
+    if mqtt_enabled and load_config_from_mqtt:
+        display.set_status("Checking for config updates...")
 
+        # Connect to WiFi
+        if connect_wifi(config.network_config, config.network_fallback_config):
+            # Set up MQTT client
+            mqtt_client = setup_mqtt(config.mqtt_config)
+
+            if mqtt_client:
+                # Check for configuration updates
+                display.set_status("Checking MQTT config...")
+                updated_config = check_config_update(mqtt_client, config.mqtt_config, config.config)
+
+                # Disconnect MQTT client after checking for updates
+                try:
+                    mqtt_client.disconnect()
+                except Exception as e:
+                    print(f"Error disconnecting MQTT client: {e}")
+                # If we got an updated configuration with a newer version, save it
+                if updated_config != config.config and updated_config.get("version", 0) > config.current_version:
+                    display.set_status("Updating config...")
+                    print(f"Found newer configuration (version {updated_config.get('version')}), updating...")
+                    config.save_config(updated_config)
+
+
+
+    # Initialize a DHT22 sensor using configuration
+    dht_sensor = DHT22Sensor(sensor_config=config.dht_config)
+
+    # Update display header with sensor name
+    name_str = f"N: {dht_sensor.name}"
+    display.set_header(name_str)
+
+    # Set up MQTT
+    mqtt_enabled = config.mqtt_config.get("enabled", False)
+
+    print(f"System initialized. Will run every {config.update_interval} seconds...")
+    mqtt_client = None
     # Main loop - sleep until button press, then read and display sensor data
     try:
         # while True:
@@ -150,16 +171,16 @@ def main():
         if mqtt_enabled:
             # Initialize wifi connection
             display.set_status("Connecting WiFi...")
-            connect_wifi(network_config)
+            connect_wifi(config.network_config, config.network_fallback_config)
 
             # Set up MQTT client if enabled
             display.set_status("Setting up MQTT...")
-            print(f"MQTT enabled: {mqtt_enabled}, broker: {mqtt_config.get('broker')}")
-            mqtt_client = setup_mqtt(mqtt_config)
+            print(f"MQTT enabled: {mqtt_enabled}, broker: {config.mqtt_config.get('broker')}")
+            mqtt_client = setup_mqtt(config.mqtt_config)
             display.set_status("Publishing to MQTT...")
-            print(f"Publishing sensor data to MQTT at {mqtt_config.get('broker')}:{mqtt_config.get('port')}")
+            print(f"Publishing sensor data to MQTT at {config.mqtt_config.get('broker')}:{config.mqtt_config.get('port')}")
             # display.display_values([mqtt_client.server, mqtt_client.port])
-            publish_sensor_data(mqtt_client, mqtt_config, dht_sensor, temperature, humidity)
+            publish_sensor_data(mqtt_client, config.mqtt_config, dht_sensor, temperature, humidity)
             print("Sensor data published to MQTT")
             try:
                 if mqtt_client:
@@ -173,7 +194,10 @@ def main():
         # sleep, to be able to do something, before going into deepsleep
         time.sleep(display.on_time)
 
-        time_until_next_read = mqtt_publish_interval - (time.time() - last_read_time)
+        time_until_next_read = config.update_interval - (time.time() - last_read_time)
+        if time_until_next_read < 0:
+            time_until_next_read = config.update_interval
+
         display.set_status(f"Sleeping {time_until_next_read}s")
         print('sleeping for', time_until_next_read, 'seconds')
         if not SIMULATION:
@@ -201,7 +225,7 @@ def main():
         print("Program terminated by user")
 
 
-def connect_wifi(network_config: dict):
+def connect_wifi(network_config: dict, fallback_config: dict = None):
     import network
     ssid = network_config.get("ssid")
     password = network_config.get("password")
@@ -220,8 +244,15 @@ def connect_wifi(network_config: dict):
         # Check if connection attempt has timed out
         if time.time() - connection_start_time > timeout:
             print("Connection timed out")
+
+            # Try fallback network if available
+            if fallback_config:
+                print("Trying fallback network")
+                return connect_wifi(fallback_config)
             return False
-        pass
+
+        time.sleep(1)
+
     print('Connection successful')
     print(station.ifconfig())
     return True
@@ -234,5 +265,3 @@ if __name__ == "__main__":
         print(f"An error occurred: {e}")
         time.sleep(5) # give time to read the error message and respond
         deepsleep(1) # dummy deepsleep to basically reset the system
-
-
