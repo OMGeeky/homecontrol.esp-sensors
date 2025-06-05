@@ -11,17 +11,9 @@ This program:
 
 import time
 
-from esp_sensors.oled_display import OLEDDisplay
 from esp_sensors.dht22 import DHT22Sensor
 from esp_sensors.mqtt import setup_mqtt, publish_sensor_data, check_config_update
-from esp_sensors.config import (
-    load_config,
-    get_button_config,
-    get_sensor_config,
-    get_display_config,
-    get_mqtt_config,
-    save_config,
-)
+from esp_sensors.oled_display import OLEDDisplay
 from src.esp_sensors.config import Config
 
 # Import hardware-specific modules if available (for ESP32/ESP8266)
