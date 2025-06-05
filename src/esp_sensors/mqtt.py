@@ -622,7 +622,7 @@ class ESP32MQTTClient:
             return None
 
         # Clear any previous message for this topic
-        topic_str = topic if isinstance(topic, str) else topic.decode('utf-8')
+        topic_str = topic if isinstance(topic, str) else topic.decode('utf-8') if isinstance(topic, bytes) else str(topic)
         if topic_str in self.received_messages:
             del self.received_messages[topic_str]
 
@@ -816,39 +816,9 @@ def check_config_update(client: ESP32MQTTClient | MQTTClient | None, mqtt_config
         # Variable to store the received configuration
         received_config = None
 
-        # Define callback function to handle incoming messages
-        def config_callback(topic, msg):
-            nonlocal received_config
-            try:
-                # Verify that the topic matches our expected topic
-                expected_topic = mqtt_config.get("topic_config")
-                topic_str = topic.decode('utf-8') if isinstance(topic, bytes) else topic
-                if topic_str != expected_topic:
-                    print(f"Ignoring message from topic {topic_str} - not matching our config topic {expected_topic}")
-                    return
-
-                # Parse the message as JSON
-                msg_str = msg.decode('utf-8') if isinstance(msg, bytes) else msg
-                config_data = json.loads(msg_str)
-                print(f"Received configuration from MQTT: version {config_data.get('version', 0)}")
-                received_config = config_data
-            except Exception as e:
-                print(f"Error parsing configuration message: {e}")
-
-        # Set the callback
-        client.set_callback(config_callback)
-
-        # Subscribe to the configuration topic
-        if not subscribe_to_config(client, mqtt_config):
-            print("Failed to subscribe to configuration topic")
-            return current_config
-
-        # Check for retained messages (will be processed by the callback)
-        print("Checking for retained configuration messages...")
-        client.check_msg()
-
-        # If using ESP32MQTTClient, we can use read_topic for a cleaner implementation
         if isinstance(client, ESP32MQTTClient):
+            print("Using ESP32MQTTClient to check for configuration updates")
+
             topic_config = mqtt_config.get("topic_config")
             wait_time = mqtt_config.get("config_wait_time", 1.0)
 
@@ -858,13 +828,42 @@ def check_config_update(client: ESP32MQTTClient | MQTTClient | None, mqtt_config
             if config_msg:
                 try:
                     msg_str = config_msg.decode('utf-8') if isinstance(config_msg, bytes) else config_msg
-                    config_data = json.loads(msg_str)
-                    if config_data.get("version", 0) > current_config.get("version", 0):
-                        print(f"Found newer configuration (version {config_data.get('version')})")
-                        return config_data
+                    received_config = json.loads(msg_str)
                 except Exception as e:
                     print(f"Error parsing configuration message: {e}")
         else:
+
+            # Define callback function to handle incoming messages
+            def config_callback(topic, msg):
+                nonlocal received_config
+                try:
+                    # Verify that the topic matches our expected topic
+                    expected_topic = mqtt_config.get("topic_config")
+                    topic_str = topic.decode('utf-8') if isinstance(topic, bytes) else topic
+                    if topic_str != expected_topic:
+                        print(f"Ignoring message from topic {topic_str} - not matching our config topic {expected_topic}")
+                        return
+
+                    # Parse the message as JSON
+                    msg_str = msg.decode('utf-8') if isinstance(msg, bytes) else msg
+                    config_data = json.loads(msg_str)
+                    print(f"Received configuration from MQTT: version {config_data.get('version', 0)}")
+                    received_config = config_data
+                except Exception as e:
+                    print(f"Error parsing configuration message: {e}")
+
+            # Set the callback
+            client.set_callback(config_callback)
+
+            # Subscribe to the configuration topic
+            if not subscribe_to_config(client, mqtt_config):
+                print("Failed to subscribe to configuration topic")
+                return current_config
+
+            # Check for retained messages (will be processed by the callback)
+            print("Checking for retained configuration messages...")
+            client.check_msg()
+
             # For basic MQTTClient, use the original approach
             print("Waiting for configuration updates...")
             # Wait a short time for any retained messages to be processed
