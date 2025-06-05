@@ -12,7 +12,7 @@ This program:
 import time
 
 from esp_sensors.dht22 import DHT22Sensor
-from esp_sensors.mqtt import setup_mqtt, publish_sensor_data, check_config_update
+from esp_sensors.mqtt import setup_mqtt, publish_sensor_data, check_config_update, get_data_topic
 from esp_sensors.oled_display import OLEDDisplay
 from esp_sensors.config import Config
 
@@ -142,6 +142,16 @@ def main():
             mqtt_client = setup_mqtt(config.mqtt_config)
 
             if mqtt_client:
+                if not mqtt_client.connected:
+                    try:
+                        mqtt_client.connect()
+                        display.set_status("MQTT connected")
+                        print("MQTT client connected")
+                    except Exception as e:
+                        print(f"Error connecting MQTT client: {e}")
+                        mqtt_client = None
+
+            if mqtt_client and mqtt_client.connected:
                 # First check for configuration updates
                 if load_config_from_mqtt:
                     display.set_status("Checking MQTT config...")
@@ -153,6 +163,7 @@ def main():
                         display.set_status("Updating config...")
                         print(f"Found newer configuration (version {updated_config.get('version')}), updating...")
                         config.save_config(updated_config)
+                        mqtt_client.publish(get_data_topic(config.mqtt_config) + "/config_status", "Configuration updated")
                         # Note: We continue with the current config for this cycle
                         # The updated config will be used after the next reboot
                     else:

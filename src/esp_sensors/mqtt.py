@@ -731,7 +731,7 @@ def publish_sensor_data(
         return False
 
     try:
-        topic_data_prefix = mqtt_config.get("topic_data_prefix", "/homecontrol/device/data")
+        topic_data_prefix = get_data_topic(mqtt_config)
         sensor_id = getattr(sensor, "id", sensor.name.lower().replace(" ", "_"))
 
         # Publish temperature
@@ -764,6 +764,10 @@ def publish_sensor_data(
     except Exception as e:
         print(f"Failed to publish to MQTT: {e}")
         return False
+
+
+def get_data_topic(mqtt_config):
+    return mqtt_config.get("topic_data_prefix", "/homecontrol/device/data")
 
 
 def subscribe_to_config(client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict) -> bool:
