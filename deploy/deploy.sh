@@ -13,14 +13,22 @@ mkdir -p "$UPLOAD_SOURCE_DIR"
 
 mkdir -p "$UPLOAD_SOURCE_DIR"
 mkdir -p "$LAST_UPLOAD_DIR"
-cp -r "$CODE_DIR"* "$UPLOAD_SOURCE_DIR"
+find "$CODE_DIR" -type f -not -path "*/\__pycache__/*" -not -path "*/\.*" | while read file; do
+  rel_path="${file#$CODE_DIR}"
+  mkdir -p "$(dirname "$UPLOAD_SOURCE_DIR/$rel_path")"
+  cp "$file" "$UPLOAD_SOURCE_DIR/$rel_path"
+done
 cp "$CONFIG_FILE" "$UPLOAD_SOURCE_DIR"
 
 # check if the flag -libs or -a is set and copy the libraries to the upload directory
 if [[ "$1" == "-libs" || "$1" == "-a" ]]; then
   echo "Copying libraries to upload directory"
   mkdir -p "$UPLOAD_SOURCE_DIR/lib"
-  cp -r "$LIBS_DIR"* "$UPLOAD_SOURCE_DIR/lib"
+  find "$LIBS_DIR" -type f -not -path "*/\__pycache__/*" -not -path "*/\.*" | while read file; do
+    rel_path="${file#$LIBS_DIR}"
+    mkdir -p "$(dirname "$UPLOAD_SOURCE_DIR/lib/$rel_path")"
+    cp "$file" "$UPLOAD_SOURCE_DIR/lib/$rel_path"
+  done
 fi
 
 
