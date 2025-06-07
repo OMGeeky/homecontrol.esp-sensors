@@ -55,7 +55,6 @@ class MQTTClient:
         keepalive=60,
         ssl=False,
     ):
-        # Real implementation for ESP hardware
         self.client_id = client_id
         self.server = server
         self.port = port
