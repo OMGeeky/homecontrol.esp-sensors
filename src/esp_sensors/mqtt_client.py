@@ -197,7 +197,7 @@ class MQTTClient:
             raise MQTTException("Not connected to broker (_recv_packet)")
 
         # Set socket timeout
-        self.sock.settimeout(timeout)
+            self.sock.settimeout(timeout)
 
         try:
             # Read packet type
@@ -262,8 +262,6 @@ class MQTTClient:
             else:
                 return packet_type[0], b""
 
-        except socket.timeout:
-            return None, None
         except Exception as e:
             self.connected = False
             raise MQTTException(f"Failed to receive packet: {e}")

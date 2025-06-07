@@ -19,7 +19,7 @@ This document contains a comprehensive list of improvement tasks for the ESP Sen
    - [ ] Consider using an existing MQTT library instead of custom implementation
    - [ ] Add support for MQTT QoS levels and retained messages
    - [ ] Implement proper MQTT message handling with callbacks
-   - [ ] Fix socket timeout error in ESP32MQTTClient when reading from config topic
+   - [x] Fix socket timeout error in ESP32MQTTClient when reading from config topic
 
 4. [ ] Enhance error handling and logging
    - [ ] Implement a centralized logging system
