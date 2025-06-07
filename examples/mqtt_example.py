@@ -63,15 +63,7 @@ def main():
             json.dumps(data),
             retain=True
         )
-        
-        # In simulation mode, simulate receiving a message
-        if SIMULATION:
-            print("Simulation mode: Simulating a control message")
-            client.client.simulate_message(
-                MQTT_CONFIG["topic_control"],
-                json.dumps({"command": "set_led", "value": "on"}).encode()
-            )
-        
+
         # Read from the control topic with a timeout
         print(f"Waiting for messages on {MQTT_CONFIG['topic_control']} (timeout: 10s)")
         message = client.read_topic(MQTT_CONFIG["topic_control"], 10)

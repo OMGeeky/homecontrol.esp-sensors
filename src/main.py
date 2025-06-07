@@ -17,15 +17,8 @@ from esp_sensors.oled_display import OLEDDisplay
 from esp_sensors.config import Config
 
 # Import hardware-specific modules if available (for ESP32/ESP8266)
-try:
-    from machine import Pin, deepsleep
-    import esp32
-
-    SIMULATION = False
-except ImportError:
-    # Simulation mode for development on non-ESP hardware
-    SIMULATION = True
-    print("Running in simulation mode - hardware functions will be simulated")
+from machine import Pin, deepsleep
+import esp32
 
 
 def simulate_button_press(timeout=None):
@@ -195,12 +188,7 @@ def main():
 
         display.set_status(f"Sleeping {time_until_next_read}s")
         print('sleeping for', time_until_next_read, 'seconds')
-        if not SIMULATION:
-            deepsleep(time_until_next_read * 1000)
-        else:
-            # Simulate sleep
-            print(f"Simulated deep sleep for {time_until_next_read:.1f} seconds")
-            time.sleep(time_until_next_read)
+        deepsleep(time_until_next_read * 1000)
 
     except KeyboardInterrupt:
         # Clean up on exit
