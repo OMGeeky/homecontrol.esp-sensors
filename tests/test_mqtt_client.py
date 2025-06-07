@@ -126,6 +126,31 @@ class TestMQTTClient:
             assert mqtt_client.sock is mock_sock
 
     @patch("socket.socket")
+    def test_connect_timeout(self, mock_socket, mqtt_client):
+        """Test connection with timeout."""
+        # Configure the mock socket
+        mock_sock = MagicMock()
+        mock_socket.return_value = mock_sock
+
+        # Mock the _recv_packet method to return None (simulating timeout)
+        with patch.object(
+            mqtt_client, "_recv_packet", return_value=(None, None)
+        ):
+            # Call connect
+            result = mqtt_client.connect()
+
+            # Verify socket was created and connected
+            mock_socket.assert_called_once()
+            mock_sock.connect.assert_called_once_with(("test.mosquitto.org", 1883))
+
+            # Verify CONNECT packet was sent
+            mock_sock.send.assert_called_once()
+
+            # Verify result indicates failure but doesn't crash
+            assert result == 1
+            assert mqtt_client.connected is False
+
+    @patch("socket.socket")
     def test_connect_failure(self, mock_socket, mqtt_client):
         """Test connection failure to MQTT broker."""
         # Configure the mock socket
@@ -194,6 +219,19 @@ class TestMQTTClient:
             # Verify PUBLISH packet was sent
             assert mock_sock.send.call_count == 1
 
+        # Test with QoS 1 and timeout
+        mock_sock.reset_mock()
+
+        # Mock _recv_packet to return None (simulating timeout)
+        with patch.object(
+            mqtt_client, "_recv_packet", return_value=(None, None)
+        ):
+            # This should not raise an exception
+            mqtt_client.publish("test/topic", "test message", qos=1)
+
+            # Verify PUBLISH packet was still sent
+            assert mock_sock.send.call_count == 1
+
     @patch("socket.socket")
     def test_subscribe(self, mock_socket, mqtt_client):
         """Test subscribing to a topic."""
@@ -219,6 +257,22 @@ class TestMQTTClient:
             # Verify subscription was stored
             assert "test/topic" in mqtt_client.subscriptions
             assert mqtt_client.subscriptions["test/topic"] == 0
+
+        # Test with timeout
+        mock_sock.reset_mock()
+
+        # Mock _recv_packet to return None (simulating timeout)
+        with patch.object(
+            mqtt_client, "_recv_packet", return_value=(None, None)
+        ):
+            # This should not raise an exception
+            mqtt_client.subscribe("test/timeout")
+
+            # Verify SUBSCRIBE packet was still sent
+            assert mock_sock.send.call_count == 1
+
+            # Verify subscription was still stored
+            assert "test/timeout" in mqtt_client.subscriptions
 
     @patch("socket.socket")
     def test_check_msg(self, mock_socket, mqtt_client):
