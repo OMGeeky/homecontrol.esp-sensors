@@ -204,12 +204,9 @@ def main():
                     print("MQTT client disconnected")
                 except Exception as e:
                     print(f"Error disconnecting MQTT client: {e}")
-            else:
-                print("MQTT client not connected, skipping publish")
-                display.set_status("MQTT not connected")
-
-            # Save the updated reconnection state to the configuration
-            config.save_config()
+            if mqtt_client:
+                # Save the updated reconnection state to the configuration
+                config.save_config()
         else:
             print("MQTT is disabled, not publishing data")
 
