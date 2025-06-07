@@ -9,7 +9,6 @@ This module uses the MQTTClient class from mqtt_client.py for the core MQTT impl
 
 import time
 import json
-import os
 from .mqtt_client import (
     MQTTClient,
     MQTTException,
