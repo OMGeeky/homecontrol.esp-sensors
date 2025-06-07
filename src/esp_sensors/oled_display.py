@@ -116,6 +116,26 @@ class OLEDDisplay(Sensor):
             self._display = None
 
     # region basic display methods
+    def power_off(self):
+        """
+        Turn off the display to save power.
+        """
+        if SIMULATION:
+            print("Simulated OLED display powered off")
+        else:
+            if self._display:
+                self._display.poweroff()
+
+    def power_on(self):
+        """
+        Turn on the display.
+        """
+        if SIMULATION:
+            print("Simulated OLED display powered on")
+        else:
+            if self._display:
+                self._display.poweron()
+
     def clear(self):
         """
         Clear the display.
