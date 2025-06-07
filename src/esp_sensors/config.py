@@ -111,7 +111,7 @@ class Config:
         """
         return load_config(self.config_path)
 
-    def save_config(self, config: dict) -> bool:
+    def save_config(self, config: dict = None) -> bool:
         """
         Save the provided configuration to the file.
 
@@ -121,7 +121,11 @@ class Config:
         Returns:
             True if saving was successful, False otherwise
         """
-        self.config = config
+        if config is None:
+            config = self.config
+        else:
+            self.config = config
+
         self.update_configs(config)
         return save_config_to_file(config, self.config_path)
 
