@@ -209,17 +209,60 @@ class MQTTClient:
             # Read remaining length
             remaining_length = 0
             multiplier = 1
-            while True:
-                byte = self.sock.recv(1)[0]
-                remaining_length += (byte & 0x7F) * multiplier
-                multiplier *= 128
-                if not (byte & 0x80):
-                    break
+            max_iterations = (
+                4  # MQTT spec says remaining length field is at most 4 bytes
+            )
+            iterations = 0
+
+            while iterations < max_iterations:
+                iterations += 1
+                try:
+                    byte_data = self.sock.recv(1)
+                    if not byte_data:
+                        print(
+                            "Warning: Incomplete packet received (no remaining length byte)"
+                        )
+                        return None, None
+
+                    byte = byte_data[0]
+                    remaining_length += (byte & 0x7F) * multiplier
+                    multiplier *= 128
+
+                    if not (byte & 0x80):
+                        break
+                except socket.timeout:
+                    print("Warning: Timeout while reading remaining length")
+                    return None, None
+
+            if iterations == max_iterations and (byte & 0x80):
+                print("Warning: Malformed remaining length field (too many bytes)")
+                return None, None
 
             # Read the payload
-            payload = self.sock.recv(remaining_length) if remaining_length else b""
+            if remaining_length > 0:
+                try:
+                    payload = bytearray()
+                    bytes_received = 0
 
-            return packet_type[0], payload
+                    # Read in chunks to handle timeouts better
+                    while bytes_received < remaining_length:
+                        chunk = self.sock.recv(
+                            min(1024, remaining_length - bytes_received)
+                        )
+                        if not chunk:  # Connection closed
+                            print("Warning: Connection closed while reading payload")
+                            return None, None
+
+                        payload.extend(chunk)
+                        bytes_received += len(chunk)
+
+                    return packet_type[0], payload
+                except socket.timeout:
+                    print("Warning: Timeout while reading payload")
+                    return None, None
+            else:
+                return packet_type[0], b""
+
         except socket.timeout:
             return None, None
         except Exception as e:
@@ -469,29 +512,67 @@ class MQTTClient:
         if packet_type is None:
             return
 
-        if packet_type & 0xF0 == PUBLISH:
-            # Extract flags
-            dup = (packet_type & 0x08) >> 3
-            qos = (packet_type & 0x06) >> 1
-            retain = packet_type & 0x01
+        try:
+            if packet_type & 0xF0 == PUBLISH:
+                # Extract flags
+                dup = (packet_type & 0x08) >> 3
+                qos = (packet_type & 0x06) >> 1
+                retain = packet_type & 0x01
 
-            # Extract topic
-            topic_len = struct.unpack("!H", payload[0:2])[0]
-            topic = payload[2 : 2 + topic_len]
+                # Ensure payload is long enough for topic length
+                if len(payload) < 2:
+                    print(
+                        "Warning: Malformed PUBLISH packet (payload too short for topic length)"
+                    )
+                    return
 
-            # Extract packet ID for QoS > 0
-            if qos > 0:
-                pid = struct.unpack("!H", payload[2 + topic_len : 2 + topic_len + 2])[0]
-                message = payload[2 + topic_len + 2 :]
+                try:
+                    # Extract topic
+                    topic_len = struct.unpack("!H", payload[0:2])[0]
 
-                # Send PUBACK for QoS 1
-                if qos == 1:
-                    self._send_packet(PUBACK, struct.pack("!H", pid))
-            else:
-                message = payload[2 + topic_len :]
+                    # Ensure payload is long enough for topic
+                    if len(payload) < 2 + topic_len:
+                        print(
+                            "Warning: Malformed PUBLISH packet (payload too short for topic)"
+                        )
+                        return
 
-            # Call the callback if set
-            if self.callback:
-                self.callback(topic, message)
+                    topic = payload[2 : 2 + topic_len]
+
+                    # Extract packet ID for QoS > 0
+                    if qos > 0:
+                        # Ensure payload is long enough for packet ID
+                        if len(payload) < 2 + topic_len + 2:
+                            print(
+                                "Warning: Malformed PUBLISH packet (payload too short for packet ID)"
+                            )
+                            return
+
+                        pid = struct.unpack(
+                            "!H", payload[2 + topic_len : 2 + topic_len + 2]
+                        )[0]
+                        message = payload[2 + topic_len + 2 :]
+
+                        # Send PUBACK for QoS 1
+                        if qos == 1:
+                            try:
+                                self._send_packet(PUBACK, struct.pack("!H", pid))
+                            except Exception as e:
+                                print(f"Warning: Failed to send PUBACK: {e}")
+                    else:
+                        message = payload[2 + topic_len :]
+
+                    # Call the callback if set
+                    if self.callback:
+                        try:
+                            self.callback(topic, message)
+                        except Exception as e:
+                            print(f"Warning: Callback error: {e}")
+                except struct.error as e:
+                    print(f"Warning: Failed to unpack PUBLISH packet: {e}")
+                except Exception as e:
+                    print(f"Warning: Error processing PUBLISH packet: {e}")
+        except Exception as e:
+            print(f"Warning: Unexpected error in check_msg: {e}")
 
         return
