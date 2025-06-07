@@ -180,7 +180,7 @@ class MQTTClient:
             self.connected = False
             raise MQTTException(f"Failed to send packet: {e}")
 
-    def _recv_packet(self, timeout=1.0):
+    def _recv_packet(self, timeout=5.0):
         """
         Receive an MQTT packet from the broker.
 
@@ -197,7 +197,7 @@ class MQTTClient:
             raise MQTTException("Not connected to broker (_recv_packet)")
 
         # Set socket timeout
-            self.sock.settimeout(timeout)
+        self.sock.settimeout(timeout)
 
         try:
             # Read packet type
@@ -504,7 +504,7 @@ class MQTTClient:
             self.ping()
 
         # Try to receive a packet with a short timeout
-        packet_type, payload = self._recv_packet(timeout=0.1)
+        packet_type, payload = self._recv_packet(timeout=0.5)
 
         if packet_type is None:
             return

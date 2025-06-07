@@ -179,12 +179,12 @@ class ESP32MQTTClient:
         topic_str = topic.decode("utf-8") if isinstance(topic, bytes) else topic
         msg_str = msg.decode("utf-8") if isinstance(msg, bytes) else msg
 
-        print(f"[ESP32MQTT] Message received on {topic_str}: {msg_str}")
+        print(f"[ESP32MQTT] Message received on '{topic_str}': len: {len(msg_str)}")
 
         # Store the message
         self.received_messages[topic_str] = msg
 
-    def read_topic(self, topic, wait_time=5):
+    def read_topic(self, topic, wait_time=5.0):
         """
         Read data from a topic with a configurable wait time.
 
@@ -197,7 +197,9 @@ class ESP32MQTTClient:
         """
         if not self.connected or not self.client:
             print("[ESP32MQTT] Not connected to broker")
-            return None
+            # Try to reconnect
+            if not self.connect():
+                return None
 
         # Clear any previous message for this topic
         topic_str = (
@@ -209,7 +211,9 @@ class ESP32MQTTClient:
             del self.received_messages[topic_str]
 
         # Subscribe to the topic if not already subscribed
-        self.subscribe(topic)
+        if not self.subscribe(topic):
+            print("[ESP32MQTT] Failed to subscribe to topic")
+            return None
 
         # Wait for the message
         start_time = time.time()
@@ -227,6 +231,11 @@ class ESP32MQTTClient:
             except Exception as e:
                 print(f"[ESP32MQTT] Error while reading topic: {e}")
                 self.connected = False
+                # Try to reconnect once
+                if self.connect():
+                    # Resubscribe to the topic
+                    if self.subscribe(topic):
+                        continue
                 return None
 
         print(
@@ -257,37 +266,21 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
         password = mqtt_config.get("password", "")
         keepalive = mqtt_config.get("keepalive", 60)
         ssl = mqtt_config.get("ssl", False)
-        use_esp32_client = mqtt_config.get("use_esp32_client", True)
 
         print(f"Setting up MQTT client: {client_id} -> {broker}:{port}")
 
-        if use_esp32_client:
-            # Use the new ESP32MQTTClient
-            client = ESP32MQTTClient(
-                client_id, broker, port, username, password, keepalive, ssl
-            )
+        # Use the new ESP32MQTTClient
+        client = ESP32MQTTClient(
+            client_id, broker, port, username, password, keepalive, ssl
+        )
 
-            # Try to connect
-            if client.connect():
-                print("MQTT connected successfully using ESP32MQTTClient")
-            else:
-                print("Failed to connect using ESP32MQTTClient")
+        # Try to connect
+        if client.connect():
+            print("MQTT connected successfully using ESP32MQTTClient")
+        else:
+            print("Failed to connect using ESP32MQTTClient")
 
-            return client
-            # print("Failed to connect using ESP32MQTTClient, falling back to basic MQTTClient")
-            # # Fall back to basic client
-            # use_esp32_client = False
-
-        if not use_esp32_client:
-            # Use the basic MQTTClient for backward compatibility
-            client = MQTTClient(
-                client_id, broker, port, username, password, keepalive, ssl
-            )
-
-            # Try to connect
-            client.connect()
-            print("MQTT connected successfully using basic MQTTClient")
-            return client
+        return client
 
     except Exception as e:
         print(f"Failed to connect to MQTT broker: {e}")
@@ -322,14 +315,6 @@ def publish_sensor_data(
         topic_data_prefix = get_data_topic(mqtt_config)
         sensor_id = getattr(sensor, "id", sensor.name.lower().replace(" ", "_"))
 
-        # Publish temperature
-        temp_topic = f"{topic_data_prefix}/{sensor_id}/temperature"
-        temp_payload = str(temperature).encode()
-
-        # Publish humidity
-        humidity_topic = f"{topic_data_prefix}/{sensor_id}/humidity"
-        humidity_payload = str(humidity).encode()
-
         # Prepare combined data as JSON
         data_topic = f"{topic_data_prefix}/{sensor_id}/data"
         data = {
@@ -340,15 +325,16 @@ def publish_sensor_data(
         }
         data_payload = json.dumps(data).encode()
 
-        # Both client types have compatible publish methods
-        # client.publish(temp_topic, temp_payload)
-        # client.publish(humidity_topic, humidity_payload)
-        client.publish(data_topic, data_payload)
-
-        print(
-            f"Published sensor data to MQTT: {temp_topic}, {humidity_topic}, {data_topic}"
-        )
-        return True
+        # Publish the data and check the result
+        publish_success = client.publish(data_topic, data_payload)
+        if publish_success:
+            print(
+                f"Published sensor data to MQTT: '{data_topic}'"
+            )
+            return True
+        else:
+            print("Failed to publish sensor data to MQTT")
+            return False
     except Exception as e:
         print(f"Failed to publish to MQTT: {e}")
         return False
@@ -416,7 +402,7 @@ def check_config_update(
             print("Using ESP32MQTTClient to check for configuration updates")
 
             topic_config = mqtt_config.get("topic_config")
-            wait_time = mqtt_config.get("config_wait_time", 1.0)
+            wait_time = mqtt_config.get("config_wait_time", 5.0)
 
             print(
                 f"Using ESP32MQTTClient to read from config topic with wait time: {wait_time}s"

@@ -148,9 +148,7 @@ def main():
                         print(f"Error connecting MQTT client: {e}")
                         mqtt_client = None
 
-            if mqtt_client and mqtt_client.connected:
-                # First check for configuration updates
-                if load_config_from_mqtt:
+            if mqtt_client and mqtt_client.connected and load_config_from_mqtt:
                     display.set_status("Checking MQTT config...")
                     print("Checking for configuration updates before publishing...")
                     updated_config = check_config_update(
@@ -167,26 +165,37 @@ def main():
                             f"Found newer configuration (version {updated_config.get('version')}), updating..."
                         )
                         config.save_config(updated_config)
-                        mqtt_client.publish(
+                        publish_success = mqtt_client.publish(
                             get_data_topic(config.mqtt_config) + "/config_status",
                             "Configuration updated",
                         )
+                        if not publish_success:
+                            print("Failed to publish configuration update status")
                         # Note: We continue with the current config for this cycle
                         # The updated config will be used after the next reboot
                     else:
                         print(
                             f"No configuration updates found or no newer version available (local version: {config.current_version})"
                         )
+            else:
+                print("MQTT client not connected or not configured to load config from broker, skipping config check")
+                display.set_status("MQTT not loading config")
 
+            if mqtt_client and mqtt_client.connected:
                 # Now publish sensor data using the same MQTT client
                 display.set_status("Publishing to MQTT...")
                 print(
                     f"Publishing sensor data to MQTT at {config.mqtt_config.get('broker')}:{config.mqtt_config.get('port')}"
                 )
-                publish_sensor_data(
+                publish_success = publish_sensor_data(
                     mqtt_client, config.mqtt_config, dht_sensor, temperature, humidity
                 )
-                print("Sensor data published to MQTT")
+                if publish_success:
+                    print("Sensor data published to MQTT")
+                    display.set_status("Published to MQTT")
+                else:
+                    print("Failed to publish sensor data to MQTT")
+                    display.set_status("MQTT publish failed")
 
                 # Disconnect MQTT client after both operations
                 try:
@@ -195,6 +204,9 @@ def main():
                     print("MQTT client disconnected")
                 except Exception as e:
                     print(f"Error disconnecting MQTT client: {e}")
+            else:
+                print("MQTT client not connected, skipping publish")
+                display.set_status("MQTT not connected")
         else:
             print("MQTT is disabled, not publishing data")
 
