@@ -138,7 +138,9 @@ def main():
         if mqtt_enabled:
             # Initialize Wi-Fi connection
             display.set_status("Connecting WiFi...")
-            wifi_connected, station = connect_wifi(config.network_config, config.network_fallback_config)
+            wifi_connected, station = connect_wifi(
+                config.network_config, config.network_fallback_config
+            )
 
             if not wifi_connected:
                 display.set_status("WiFi connection failed")
@@ -168,7 +170,11 @@ def main():
                             f"Publishing sensor data to MQTT at {config.mqtt_config.get('broker')}:{config.mqtt_config.get('port')}"
                         )
                         publish_success = publish_sensor_data(
-                            mqtt_client, config.mqtt_config, dht_sensor, temperature, humidity
+                            mqtt_client,
+                            config.mqtt_config,
+                            dht_sensor,
+                            temperature,
+                            humidity,
                         )
                         if publish_success:
                             print("Sensor data published to MQTT")
@@ -188,7 +194,8 @@ def main():
                             # If we got an updated configuration with a newer version, save it
                             if (
                                 updated_config != config.config
-                                and updated_config.get("version", 0) > config.current_version
+                                and updated_config.get("version", 0)
+                                > config.current_version
                             ):
                                 display.set_status("Updating config...")
                                 print(
@@ -196,7 +203,8 @@ def main():
                                 )
                                 config.save_config(updated_config)
                                 mqtt_client.publish(
-                                    get_data_topic(config.mqtt_config) + "/config_status",
+                                    get_data_topic(config.mqtt_config)
+                                    + "/config_status",
                                     "Configuration updated",
                                 )
                                 # Note: We continue with the current config for this cycle
@@ -250,7 +258,7 @@ def main():
             display.display_text("Shutting down...", 0, 0)
 
         # Disconnect MQTT if connected
-        if 'mqtt_client' in locals() and mqtt_client:
+        if "mqtt_client" in locals() and mqtt_client:
             try:
                 mqtt_client.disconnect()
                 print("MQTT client disconnected")
@@ -258,7 +266,7 @@ def main():
                 print(f"Error disconnecting MQTT client: {e}")
 
         # Disconnect WiFi if connected
-        if 'station' in locals() and station:
+        if "station" in locals() and station:
             disconnect_wifi(station)
 
         # Power off display to save battery if it's enabled and not set to always_on
@@ -303,6 +311,7 @@ def connect_wifi(network_config: dict, fallback_config: dict = None):
     print("Connection successful")
     print(station.ifconfig())
     return True, station
+
 
 def disconnect_wifi(station):
     """
