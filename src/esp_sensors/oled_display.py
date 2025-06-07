@@ -1,6 +1,7 @@
 """
 OLED display module for ESP32 using SSD1306 controller.
 """
+
 LINE_HEIGHT = 8  # Height of each line in pixels
 
 HEADER_LINE = 0
@@ -23,16 +24,16 @@ class OLEDDisplay(Sensor):
     """SSD1306 OLED display implementation."""
 
     def __init__(
-            self,
-            name: str = None,
-            scl_pin: int = None,
-            sda_pin: int = None,
-            width: int = None,
-            height: int = None,
-            address: int | str = None,
-            interval: int = None,
-            on_time: int = None,
-            display_config=None,
+        self,
+        name: str = None,
+        scl_pin: int = None,
+        sda_pin: int = None,
+        width: int = None,
+        height: int = None,
+        address: int | str = None,
+        interval: int = None,
+        on_time: int = None,
+        display_config=None,
     ):
         """
         Initialize a new OLED display.
@@ -99,7 +100,9 @@ class OLEDDisplay(Sensor):
                 print(f"  I2C bus: {i2c}")
                 # print('i2c scan:', i2c.scan())
                 print(f"  I2C address: {self.address}")
-                self._display = ssd1306.SSD1306_I2C(self.width, self.height, i2c, addr=self.address)
+                self._display = ssd1306.SSD1306_I2C(
+                    self.width, self.height, i2c, addr=self.address
+                )
                 print(f"  Display initialized: {self._display}")
                 self._display.fill(0)  # Clear the display
                 self._display.text("Initialized", 0, 0, 1)
@@ -149,7 +152,9 @@ class OLEDDisplay(Sensor):
                 y = i * LINE_HEIGHT
                 if y < self.height:  # Make sure we don't go off the screen
                     x = 0
-                    self._display.fill_rect(x, y, self.width, LINE_HEIGHT, 0)  # Clear the line
+                    self._display.fill_rect(
+                        x, y, self.width, LINE_HEIGHT, 0
+                    )  # Clear the line
                     self._display.text(str(value), x, y, 1)
                 else:
                     print(f"Line {i} exceeds display height, skipping")
@@ -176,7 +181,9 @@ class OLEDDisplay(Sensor):
                 # self._display.fill(0)  # Clear the display
                 x = 0
                 y = VALUE_LINES_START * LINE_HEIGHT
-                self._display.fill_rect(x, y, self.width, self.height-y, 0)  # Clear the line
+                self._display.fill_rect(
+                    x, y, self.width, self.height - y, 0
+                )  # Clear the line
                 # Display each value on a new line (8 pixels per line)
                 for i, value in enumerate(values):
                     self.set_line_text(VALUE_LINES_START + i, value)
@@ -233,4 +240,5 @@ class OLEDDisplay(Sensor):
         metadata["type"] = "SSD1306"
         metadata["values_count"] = len(self._values)
         return metadata
+
     # endregion

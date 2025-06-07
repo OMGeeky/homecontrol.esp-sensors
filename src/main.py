@@ -12,7 +12,12 @@ This program:
 import time
 
 from esp_sensors.dht22 import DHT22Sensor
-from esp_sensors.mqtt import setup_mqtt, publish_sensor_data, check_config_update, get_data_topic
+from esp_sensors.mqtt import (
+    setup_mqtt,
+    publish_sensor_data,
+    check_config_update,
+    get_data_topic,
+)
 from esp_sensors.oled_display import OLEDDisplay
 from esp_sensors.config import Config
 
@@ -110,16 +115,13 @@ def main():
         time_str = f"Time: {time.time():.0f}"
 
         # Print to console
-        print('='*20)
+        print("=" * 20)
         print(f"{temp_str}, {hum_str}")
-        print('='*20)
-
+        print("=" * 20)
 
         # Display values
         ## TODO: only display values, if the button has been clicked
-        display.display_values(
-            [temp_str, hum_str, time_str]
-        )
+        display.display_values([temp_str, hum_str, time_str])
 
         display.set_status("")
 
@@ -131,7 +133,9 @@ def main():
 
             # Set up MQTT client if enabled
             display.set_status("Setting up MQTT...")
-            print(f"MQTT enabled: {mqtt_enabled}, broker: {config.mqtt_config.get('broker')}")
+            print(
+                f"MQTT enabled: {mqtt_enabled}, broker: {config.mqtt_config.get('broker')}"
+            )
             mqtt_client = setup_mqtt(config.mqtt_config)
 
             if mqtt_client:
@@ -149,24 +153,39 @@ def main():
                 if load_config_from_mqtt:
                     display.set_status("Checking MQTT config...")
                     print("Checking for configuration updates before publishing...")
-                    updated_config = check_config_update(mqtt_client, config.mqtt_config, config.config)
+                    updated_config = check_config_update(
+                        mqtt_client, config.mqtt_config, config.config
+                    )
 
                     # If we got an updated configuration with a newer version, save it
-                    if updated_config != config.config and updated_config.get("version", 0) > config.current_version:
+                    if (
+                        updated_config != config.config
+                        and updated_config.get("version", 0) > config.current_version
+                    ):
                         display.set_status("Updating config...")
-                        print(f"Found newer configuration (version {updated_config.get('version')}), updating...")
+                        print(
+                            f"Found newer configuration (version {updated_config.get('version')}), updating..."
+                        )
                         config.save_config(updated_config)
-                        mqtt_client.publish(get_data_topic(config.mqtt_config) + "/config_status", "Configuration updated")
+                        mqtt_client.publish(
+                            get_data_topic(config.mqtt_config) + "/config_status",
+                            "Configuration updated",
+                        )
                         # Note: We continue with the current config for this cycle
                         # The updated config will be used after the next reboot
                     else:
-                        print(f"No configuration updates found or no newer version available (local version: {config.current_version})")
-
+                        print(
+                            f"No configuration updates found or no newer version available (local version: {config.current_version})"
+                        )
 
                 # Now publish sensor data using the same MQTT client
                 display.set_status("Publishing to MQTT...")
-                print(f"Publishing sensor data to MQTT at {config.mqtt_config.get('broker')}:{config.mqtt_config.get('port')}")
-                publish_sensor_data(mqtt_client, config.mqtt_config, dht_sensor, temperature, humidity)
+                print(
+                    f"Publishing sensor data to MQTT at {config.mqtt_config.get('broker')}:{config.mqtt_config.get('port')}"
+                )
+                publish_sensor_data(
+                    mqtt_client, config.mqtt_config, dht_sensor, temperature, humidity
+                )
                 print("Sensor data published to MQTT")
 
                 # Disconnect MQTT client after both operations
@@ -187,7 +206,7 @@ def main():
             time_until_next_read = config.update_interval
 
         display.set_status(f"Sleeping {time_until_next_read}s")
-        print('sleeping for', time_until_next_read, 'seconds')
+        print("sleeping for", time_until_next_read, "seconds")
         deepsleep(time_until_next_read * 1000)
 
     except KeyboardInterrupt:
@@ -210,6 +229,7 @@ def main():
 
 def connect_wifi(network_config: dict, fallback_config: dict = None):
     import network
+
     ssid = network_config.get("ssid")
     password = network_config.get("password")
     timeout = network_config.get("timeout", 10)
@@ -236,7 +256,7 @@ def connect_wifi(network_config: dict, fallback_config: dict = None):
 
         time.sleep(1)
 
-    print('Connection successful')
+    print("Connection successful")
     print(station.ifconfig())
     return True
 
@@ -246,5 +266,5 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print(f"An error occurred: {e}")
-        time.sleep(5) # give time to read the error message and respond
-        deepsleep(1) # dummy deepsleep to basically reset the system
+        time.sleep(5)  # give time to read the error message and respond
+        deepsleep(1)  # dummy deepsleep to basically reset the system

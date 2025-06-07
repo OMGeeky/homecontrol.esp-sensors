@@ -9,10 +9,18 @@ import socket
 import struct
 from unittest.mock import patch, MagicMock, call
 from src.esp_sensors.mqtt_client import (
-    MQTTClient, MQTTException,
-    CONNECT, CONNACK, PUBLISH, PUBACK, SUBSCRIBE, SUBACK,
-    PINGREQ, PINGRESP, DISCONNECT,
-    CONN_ACCEPTED
+    MQTTClient,
+    MQTTException,
+    CONNECT,
+    CONNACK,
+    PUBLISH,
+    PUBACK,
+    SUBSCRIBE,
+    SUBACK,
+    PINGREQ,
+    PINGRESP,
+    DISCONNECT,
+    CONN_ACCEPTED,
 )
 
 
@@ -29,7 +37,7 @@ class TestMQTTClient:
             user="test_user",
             password="test_pass",
             keepalive=60,
-            ssl=False
+            ssl=False,
         )
 
     def test_init(self, mqtt_client):
@@ -82,16 +90,16 @@ class TestMQTTClient:
         # Test with string input
         result = mqtt_client._encode_string("test")
         assert len(result) == 6  # 2 bytes length + 4 bytes string
-        assert result[0:2] == b'\x00\x04'  # Length (4) in network byte order
-        assert result[2:] == b'test'  # String content
+        assert result[0:2] == b"\x00\x04"  # Length (4) in network byte order
+        assert result[2:] == b"test"  # String content
 
         # Test with bytes input
         result = mqtt_client._encode_string(b"test")
         assert len(result) == 6
-        assert result[0:2] == b'\x00\x04'
-        assert result[2:] == b'test'
+        assert result[0:2] == b"\x00\x04"
+        assert result[2:] == b"test"
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_connect_success(self, mock_socket, mqtt_client):
         """Test successful connection to MQTT broker."""
         # Configure the mock socket
@@ -99,7 +107,9 @@ class TestMQTTClient:
         mock_socket.return_value = mock_sock
 
         # Mock the _recv_packet method to return a successful CONNACK
-        with patch.object(mqtt_client, '_recv_packet', return_value=(CONNACK, b'\x00\x00')):
+        with patch.object(
+            mqtt_client, "_recv_packet", return_value=(CONNACK, b"\x00\x00")
+        ):
             # Call connect
             result = mqtt_client.connect()
 
@@ -115,7 +125,7 @@ class TestMQTTClient:
             assert mqtt_client.connected is True
             assert mqtt_client.sock is mock_sock
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_connect_failure(self, mock_socket, mqtt_client):
         """Test connection failure to MQTT broker."""
         # Configure the mock socket
@@ -123,12 +133,14 @@ class TestMQTTClient:
         mock_socket.return_value = mock_sock
 
         # Mock the _recv_packet method to return a failed CONNACK
-        with patch.object(mqtt_client, '_recv_packet', return_value=(CONNACK, b'\x00\x01')):
+        with patch.object(
+            mqtt_client, "_recv_packet", return_value=(CONNACK, b"\x00\x01")
+        ):
             # Call connect and verify it raises an exception
             with pytest.raises(MQTTException, match="Connection refused: 1"):
                 mqtt_client.connect()
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_disconnect(self, mock_socket, mqtt_client):
         """Test disconnection from MQTT broker."""
         # Configure the mock socket
@@ -152,7 +164,7 @@ class TestMQTTClient:
         assert mqtt_client.connected is False
         assert mqtt_client.sock is None
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_publish(self, mock_socket, mqtt_client):
         """Test publishing a message to a topic."""
         # Configure the mock socket
@@ -174,13 +186,15 @@ class TestMQTTClient:
         mock_sock.reset_mock()
 
         # Mock the _recv_packet method instead of directly mocking socket.recv
-        with patch.object(mqtt_client, '_recv_packet', return_value=(PUBACK, b'\x00\x01')):
+        with patch.object(
+            mqtt_client, "_recv_packet", return_value=(PUBACK, b"\x00\x01")
+        ):
             mqtt_client.publish("test/topic", "test message", qos=1)
 
             # Verify PUBLISH packet was sent
             assert mock_sock.send.call_count == 1
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_subscribe(self, mock_socket, mqtt_client):
         """Test subscribing to a topic."""
         # Configure the mock socket
@@ -193,7 +207,9 @@ class TestMQTTClient:
         mqtt_client.last_ping = 0
 
         # Mock the _recv_packet method to return a successful SUBACK
-        with patch.object(mqtt_client, '_recv_packet', return_value=(SUBACK, b'\x00\x01\x00')):
+        with patch.object(
+            mqtt_client, "_recv_packet", return_value=(SUBACK, b"\x00\x01\x00")
+        ):
             # Call subscribe
             mqtt_client.subscribe("test/topic")
 
@@ -204,7 +220,7 @@ class TestMQTTClient:
             assert "test/topic" in mqtt_client.subscriptions
             assert mqtt_client.subscriptions["test/topic"] == 0
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_check_msg(self, mock_socket, mqtt_client):
         """Test checking for messages."""
         # Configure the mock socket
@@ -227,7 +243,7 @@ class TestMQTTClient:
         payload = topic_encoded + message.encode()
 
         # Mock the _recv_packet method to return a PUBLISH packet
-        with patch.object(mqtt_client, '_recv_packet', return_value=(PUBLISH, payload)):
+        with patch.object(mqtt_client, "_recv_packet", return_value=(PUBLISH, payload)):
             # Call check_msg
             mqtt_client.check_msg()
 

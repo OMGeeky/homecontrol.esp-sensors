@@ -10,12 +10,27 @@ This module uses the MQTTClient class from mqtt_client.py for the core MQTT impl
 import time
 import json
 from .mqtt_client import (
-    MQTTClient, MQTTException,
-    CONNECT, CONNACK, PUBLISH, PUBACK, SUBSCRIBE, SUBACK,
-    UNSUBSCRIBE, UNSUBACK, PINGREQ, PINGRESP, DISCONNECT,
-    CONN_ACCEPTED, CONN_REFUSED_PROTOCOL, CONN_REFUSED_IDENTIFIER,
-    CONN_REFUSED_SERVER, CONN_REFUSED_USER_PASS, CONN_REFUSED_AUTH,
-    MQTT_PROTOCOL_LEVEL, MQTT_CLEAN_SESSION
+    MQTTClient,
+    MQTTException,
+    CONNECT,
+    CONNACK,
+    PUBLISH,
+    PUBACK,
+    SUBSCRIBE,
+    SUBACK,
+    UNSUBSCRIBE,
+    UNSUBACK,
+    PINGREQ,
+    PINGRESP,
+    DISCONNECT,
+    CONN_ACCEPTED,
+    CONN_REFUSED_PROTOCOL,
+    CONN_REFUSED_IDENTIFIER,
+    CONN_REFUSED_SERVER,
+    CONN_REFUSED_USER_PASS,
+    CONN_REFUSED_AUTH,
+    MQTT_PROTOCOL_LEVEL,
+    MQTT_CLEAN_SESSION,
 )
 
 
@@ -70,7 +85,9 @@ class ESP32MQTTClient:
             bool: True if connection was successful, False otherwise
         """
         try:
-            print(f"[ESP32MQTT] Connecting to {self.server}:{self.port} as {self.client_id}")
+            print(
+                f"[ESP32MQTT] Connecting to {self.server}:{self.port} as {self.client_id}"
+            )
             # Create our custom MQTT client
             self.client = MQTTClient(
                 self.client_id,
@@ -79,7 +96,7 @@ class ESP32MQTTClient:
                 self.user,
                 self.password,
                 self.keepalive,
-                self.ssl
+                self.ssl,
             )
 
             # Set up callback to store received messages
@@ -178,8 +195,8 @@ class ESP32MQTTClient:
             topic (bytes): The topic the message was received on
             msg (bytes): The message payload
         """
-        topic_str = topic.decode('utf-8') if isinstance(topic, bytes) else topic
-        msg_str = msg.decode('utf-8') if isinstance(msg, bytes) else msg
+        topic_str = topic.decode("utf-8") if isinstance(topic, bytes) else topic
+        msg_str = msg.decode("utf-8") if isinstance(msg, bytes) else msg
 
         print(f"[ESP32MQTT] Message received on {topic_str}: {msg_str}")
 
@@ -202,7 +219,11 @@ class ESP32MQTTClient:
             return None
 
         # Clear any previous message for this topic
-        topic_str = topic if isinstance(topic, str) else topic.decode('utf-8') if isinstance(topic, bytes) else str(topic)
+        topic_str = (
+            topic
+            if isinstance(topic, str)
+            else topic.decode("utf-8") if isinstance(topic, bytes) else str(topic)
+        )
         if topic_str in self.received_messages:
             del self.received_messages[topic_str]
 
@@ -227,7 +248,9 @@ class ESP32MQTTClient:
                 self.connected = False
                 return None
 
-        print(f"[ESP32MQTT] No message received on {topic_str} after {wait_time} seconds")
+        print(
+            f"[ESP32MQTT] No message received on {topic_str} after {wait_time} seconds"
+        )
         return None
 
 
@@ -259,7 +282,9 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
 
         if use_esp32_client:
             # Use the new ESP32MQTTClient
-            client = ESP32MQTTClient(client_id, broker, port, username, password, keepalive, ssl)
+            client = ESP32MQTTClient(
+                client_id, broker, port, username, password, keepalive, ssl
+            )
 
             # Try to connect
             if client.connect():
@@ -268,13 +293,15 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
                 print("Failed to connect using ESP32MQTTClient")
 
             return client
-                # print("Failed to connect using ESP32MQTTClient, falling back to basic MQTTClient")
-                # # Fall back to basic client
-                # use_esp32_client = False
+            # print("Failed to connect using ESP32MQTTClient, falling back to basic MQTTClient")
+            # # Fall back to basic client
+            # use_esp32_client = False
 
         if not use_esp32_client:
             # Use the basic MQTTClient for backward compatibility
-            client = MQTTClient(client_id, broker, port, username, password, keepalive, ssl)
+            client = MQTTClient(
+                client_id, broker, port, username, password, keepalive, ssl
+            )
 
             # Try to connect
             client.connect()
@@ -350,7 +377,9 @@ def get_data_topic(mqtt_config):
     return mqtt_config.get("topic_data_prefix", "/homecontrol/device/data")
 
 
-def subscribe_to_config(client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict) -> bool:
+def subscribe_to_config(
+    client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict
+) -> bool:
     """
     Subscribe to the configuration topic.
 
@@ -381,7 +410,9 @@ def subscribe_to_config(client: ESP32MQTTClient | MQTTClient | None, mqtt_config
         return False
 
 
-def check_config_update(client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict, current_config: dict) -> dict:
+def check_config_update(
+    client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict, current_config: dict
+) -> dict:
     """
     Check for configuration updates from MQTT.
 
@@ -406,12 +437,18 @@ def check_config_update(client: ESP32MQTTClient | MQTTClient | None, mqtt_config
             topic_config = mqtt_config.get("topic_config")
             wait_time = mqtt_config.get("config_wait_time", 1.0)
 
-            print(f"Using ESP32MQTTClient to read from config topic with wait time: {wait_time}s")
+            print(
+                f"Using ESP32MQTTClient to read from config topic with wait time: {wait_time}s"
+            )
             config_msg = client.read_topic(topic_config, wait_time)
 
             if config_msg:
                 try:
-                    msg_str = config_msg.decode('utf-8') if isinstance(config_msg, bytes) else config_msg
+                    msg_str = (
+                        config_msg.decode("utf-8")
+                        if isinstance(config_msg, bytes)
+                        else config_msg
+                    )
                     received_config = json.loads(msg_str)
                 except Exception as e:
                     print(f"Error parsing configuration message: {e}")
@@ -423,15 +460,21 @@ def check_config_update(client: ESP32MQTTClient | MQTTClient | None, mqtt_config
                 try:
                     # Verify that the topic matches our expected topic
                     expected_topic = mqtt_config.get("topic_config")
-                    topic_str = topic.decode('utf-8') if isinstance(topic, bytes) else topic
+                    topic_str = (
+                        topic.decode("utf-8") if isinstance(topic, bytes) else topic
+                    )
                     if topic_str != expected_topic:
-                        print(f"Ignoring message from topic {topic_str} - not matching our config topic {expected_topic}")
+                        print(
+                            f"Ignoring message from topic {topic_str} - not matching our config topic {expected_topic}"
+                        )
                         return
 
                     # Parse the message as JSON
-                    msg_str = msg.decode('utf-8') if isinstance(msg, bytes) else msg
+                    msg_str = msg.decode("utf-8") if isinstance(msg, bytes) else msg
                     config_data = json.loads(msg_str)
-                    print(f"Received configuration from MQTT: version {config_data.get('version', 0)}")
+                    print(
+                        f"Received configuration from MQTT: version {config_data.get('version', 0)}"
+                    )
                     received_config = config_data
                 except Exception as e:
                     print(f"Error parsing configuration message: {e}")
@@ -456,8 +499,12 @@ def check_config_update(client: ESP32MQTTClient | MQTTClient | None, mqtt_config
             print("done waiting for configuration updates")
 
         # If we received a configuration and its version is newer, return it
-        if received_config and received_config.get("version", 0) > current_config.get("version", 0):
-            print(f"Found newer configuration (version {received_config.get('version')})")
+        if received_config and received_config.get("version", 0) > current_config.get(
+            "version", 0
+        ):
+            print(
+                f"Found newer configuration (version {received_config.get('version')})"
+            )
             return received_config
 
         return current_config

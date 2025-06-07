@@ -63,8 +63,9 @@ DEFAULT_CONFIG = {
         "ssid": "<your fallback ssid>",
         "password": "<your fallback password>",
         "timeout": 10,
-    }
+    },
 }
+
 
 class Config:
     """
@@ -124,7 +125,8 @@ class Config:
         self.update_configs(config)
         return save_config_to_file(config, self.config_path)
 
-def load_config(config_path: str = DEFAULT_CONFIG_PATH) :
+
+def load_config(config_path: str = DEFAULT_CONFIG_PATH):
     """
     Load configuration from a JSON file.
 
@@ -146,9 +148,7 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) :
         return DEFAULT_CONFIG
 
 
-def get_sensor_config(
-    sensor_type: str, config: dict | None = None
-) -> dict:
+def get_sensor_config(sensor_type: str, config: dict | None = None) -> dict:
     """
     Get configuration for a specific sensor type.
 
@@ -170,9 +170,7 @@ def get_sensor_config(
     return sensor_config
 
 
-def get_display_config(
-    display_type: str, config: dict | None = None
-) -> dict:
+def get_display_config(display_type: str, config: dict | None = None) -> dict:
     """
     Get configuration for a specific display type.
 
@@ -285,7 +283,9 @@ def save_config_to_file(config: dict, config_path: str = DEFAULT_CONFIG_PATH) ->
         return False
 
 
-def check_and_update_config_from_mqtt(mqtt_client, mqtt_config: dict, current_config: dict) -> dict:
+def check_and_update_config_from_mqtt(
+    mqtt_client, mqtt_config: dict, current_config: dict
+) -> dict:
     """
     Check for configuration updates from MQTT and update local configuration if needed.
 

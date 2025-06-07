@@ -74,7 +74,9 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
         self.name = (
             name if name is not None else sensor_config.get("name", "DHT22 Sensor")
         )
-        self.id = sensor_config.get("id", "dht22_" + self.name.lower().replace(" ", "_"))
+        self.id = sensor_config.get(
+            "id", "dht22_" + self.name.lower().replace(" ", "_")
+        )
         self.pin = pin if pin is not None else sensor_config.get("pin", 0)
         self.interval = (
             interval if interval is not None else sensor_config.get("interval", 60)

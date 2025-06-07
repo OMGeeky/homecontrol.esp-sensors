@@ -37,18 +37,21 @@ CONN_REFUSED_SERVER = 3
 CONN_REFUSED_USER_PASS = 4
 CONN_REFUSED_AUTH = 5
 
+
 class MQTTException(Exception):
     """MQTT Exception class for handling MQTT-specific errors"""
+
     pass
+
 
 class MQTTClient:
     """
     A basic MQTT client implementation from scratch.
-    
+
     This class implements the MQTT protocol directly using socket communication.
     It provides functionality for connecting to an MQTT broker, publishing messages,
     subscribing to topics, and receiving messages.
-    
+
     Attributes:
         client_id (str): Unique identifier for this client
         server (str): MQTT broker address
@@ -64,6 +67,7 @@ class MQTTClient:
         subscriptions (dict): Dictionary of subscribed topics
         last_ping (float): Timestamp of the last ping
     """
+
     def __init__(
         self,
         client_id,
@@ -76,7 +80,7 @@ class MQTTClient:
     ):
         """
         Initialize the MQTT client.
-        
+
         Args:
             client_id (str): Unique identifier for this client
             server (str): MQTT broker address
@@ -103,7 +107,7 @@ class MQTTClient:
     def _generate_packet_id(self):
         """
         Generate a unique packet ID for MQTT messages.
-        
+
         Returns:
             int: A unique packet ID between 1 and 65535
         """
@@ -113,10 +117,10 @@ class MQTTClient:
     def _encode_length(self, length):
         """
         Encode the remaining length field in the MQTT packet.
-        
+
         Args:
             length (int): The length to encode
-            
+
         Returns:
             bytearray: The encoded length
         """
@@ -134,25 +138,25 @@ class MQTTClient:
     def _encode_string(self, string):
         """
         Encode a string for MQTT packet.
-        
+
         Args:
             string (str or bytes): The string to encode
-            
+
         Returns:
             bytearray: The encoded string
         """
         if isinstance(string, str):
-            string = string.encode('utf-8')
+            string = string.encode("utf-8")
         return bytearray(struct.pack("!H", len(string)) + string)
 
-    def _send_packet(self, packet_type, payload=b''):
+    def _send_packet(self, packet_type, payload=b""):
         """
         Send an MQTT packet to the broker.
-        
+
         Args:
             packet_type (int): The MQTT packet type
             payload (bytes): The packet payload
-            
+
         Raises:
             MQTTException: If the client is not connected or sending fails
         """
@@ -180,13 +184,13 @@ class MQTTClient:
     def _recv_packet(self, timeout=1.0):
         """
         Receive an MQTT packet from the broker.
-        
+
         Args:
             timeout (float): Socket timeout in seconds
-            
+
         Returns:
             tuple: (packet_type, payload) or (None, None) if no packet received
-            
+
         Raises:
             MQTTException: If the client is not connected or receiving fails
         """
@@ -213,7 +217,7 @@ class MQTTClient:
                     break
 
             # Read the payload
-            payload = self.sock.recv(remaining_length) if remaining_length else b''
+            payload = self.sock.recv(remaining_length) if remaining_length else b""
 
             return packet_type[0], payload
         except socket.timeout:
@@ -225,17 +229,19 @@ class MQTTClient:
     def connect(self):
         """
         Connect to the MQTT broker.
-        
+
         Returns:
             int: 0 if successful, otherwise an error code
-            
+
         Raises:
             MQTTException: If connection fails
         """
         # Create socket
         try:
             self.sock = socket.socket()
-            print(f"[MQTT] Connecting to Socket {self.server}:{self.port} as {self.client_id}")
+            print(
+                f"[MQTT] Connecting to Socket {self.server}:{self.port} as {self.client_id}"
+            )
             self.sock.connect((self.server, self.port))
             print(f"[MQTT] Connected to {self.server}:{self.port}")
         except Exception as e:
@@ -306,7 +312,7 @@ class MQTTClient:
     def ping(self):
         """
         Send PINGREQ to keep the connection alive.
-        
+
         Raises:
             MQTTException: If no PINGRESP is received
         """
@@ -321,13 +327,13 @@ class MQTTClient:
     def publish(self, topic, msg, retain=False, qos=0):
         """
         Publish a message to a topic.
-        
+
         Args:
             topic (str or bytes): The topic to publish to
             msg (str or bytes): The message to publish
             retain (bool): Whether the message should be retained by the broker
             qos (int): Quality of Service level (0 or 1)
-            
+
         Raises:
             MQTTException: If the client is not connected or publishing fails
         """
@@ -340,16 +346,16 @@ class MQTTClient:
 
         # Convert topic and message to bytes if they're not already
         if isinstance(topic, str):
-            topic = topic.encode('utf-8')
+            topic = topic.encode("utf-8")
         if isinstance(msg, str):
-            msg = msg.encode('utf-8')
+            msg = msg.encode("utf-8")
 
         # Construct PUBLISH packet
         packet_type = PUBLISH
         if retain:
             packet_type |= 0x01
         if qos:
-            packet_type |= (qos << 1)
+            packet_type |= qos << 1
 
         # Payload: topic + message
         payload = self._encode_string(topic)
@@ -375,11 +381,11 @@ class MQTTClient:
     def subscribe(self, topic, qos=0):
         """
         Subscribe to a topic.
-        
+
         Args:
             topic (str or bytes): The topic to subscribe to
             qos (int): Quality of Service level
-            
+
         Raises:
             MQTTException: If the client is not connected or subscription fails
         """
@@ -392,7 +398,7 @@ class MQTTClient:
 
         # Convert topic to bytes if it's not already
         if isinstance(topic, str):
-            topic = topic.encode('utf-8')
+            topic = topic.encode("utf-8")
 
         # Generate packet ID
         pid = self._generate_packet_id()
@@ -411,7 +417,7 @@ class MQTTClient:
             raise MQTTException(f"No SUBACK received: {packet_type}")
 
         # Store subscription
-        topic_str = topic.decode('utf-8') if isinstance(topic, bytes) else topic
+        topic_str = topic.decode("utf-8") if isinstance(topic, bytes) else topic
         self.subscriptions[topic_str] = qos
 
         return
@@ -419,7 +425,7 @@ class MQTTClient:
     def set_callback(self, callback):
         """
         Set callback for received messages.
-        
+
         Args:
             callback (callable): Function to call when a message is received.
                                 The callback should accept two parameters:
@@ -430,7 +436,7 @@ class MQTTClient:
     def check_msg(self):
         """
         Check for pending messages from the broker.
-        
+
         This method should be called regularly to process incoming messages.
         If a callback is set, it will be called with the topic and message.
         """
@@ -455,18 +461,18 @@ class MQTTClient:
 
             # Extract topic
             topic_len = struct.unpack("!H", payload[0:2])[0]
-            topic = payload[2:2+topic_len]
+            topic = payload[2 : 2 + topic_len]
 
             # Extract packet ID for QoS > 0
             if qos > 0:
-                pid = struct.unpack("!H", payload[2+topic_len:2+topic_len+2])[0]
-                message = payload[2+topic_len+2:]
+                pid = struct.unpack("!H", payload[2 + topic_len : 2 + topic_len + 2])[0]
+                message = payload[2 + topic_len + 2 :]
 
                 # Send PUBACK for QoS 1
                 if qos == 1:
                     self._send_packet(PUBACK, struct.pack("!H", pid))
             else:
-                message = payload[2+topic_len:]
+                message = payload[2 + topic_len :]
 
             # Call the callback if set
             if self.callback:
