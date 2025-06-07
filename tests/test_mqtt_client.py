@@ -4,6 +4,8 @@ Tests for the MQTT Client module.
 This module contains tests for the MQTTClient class in the mqtt_client.py module.
 """
 
+import time
+
 import pytest
 import socket
 import struct
@@ -197,7 +199,8 @@ class TestMQTTClient:
         # Set up the client as connected
         mqtt_client.sock = mock_sock
         mqtt_client.connected = True
-        mqtt_client.last_ping = 0
+        # Set last_ping to current time to prevent ping from being triggered
+        mqtt_client.last_ping = time.time()
 
         # Call publish with QoS 0
         mqtt_client.publish("test/topic", "test message")
@@ -207,6 +210,8 @@ class TestMQTTClient:
 
         # Test with QoS 1
         mock_sock.reset_mock()
+        # Reset last_ping to current time to prevent ping from being triggered
+        mqtt_client.last_ping = time.time()
 
         # Mock the _recv_packet method instead of directly mocking socket.recv
         with patch.object(
@@ -219,6 +224,8 @@ class TestMQTTClient:
 
         # Test with QoS 1 and timeout
         mock_sock.reset_mock()
+        # Reset last_ping to current time to prevent ping from being triggered
+        mqtt_client.last_ping = time.time()
 
         # Mock _recv_packet to return None (simulating timeout)
         with patch.object(mqtt_client, "_recv_packet", return_value=(None, None)):
@@ -238,7 +245,8 @@ class TestMQTTClient:
         # Set up the client as connected
         mqtt_client.sock = mock_sock
         mqtt_client.connected = True
-        mqtt_client.last_ping = 0
+        # Set last_ping to current time to prevent ping from being triggered
+        mqtt_client.last_ping = time.time()
 
         # Mock the _recv_packet method to return a successful SUBACK
         with patch.object(
@@ -256,6 +264,8 @@ class TestMQTTClient:
 
         # Test with timeout
         mock_sock.reset_mock()
+        # Reset last_ping to current time to prevent ping from being triggered
+        mqtt_client.last_ping = time.time()
 
         # Mock _recv_packet to return None (simulating timeout)
         with patch.object(mqtt_client, "_recv_packet", return_value=(None, None)):
@@ -278,7 +288,8 @@ class TestMQTTClient:
         # Set up the client as connected
         mqtt_client.sock = mock_sock
         mqtt_client.connected = True
-        mqtt_client.last_ping = 0
+        # Set last_ping to current time to prevent ping from being triggered
+        mqtt_client.last_ping = time.time()
 
         # Set up a mock callback
         mock_callback = MagicMock()
