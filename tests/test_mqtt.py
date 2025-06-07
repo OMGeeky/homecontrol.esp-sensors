@@ -29,7 +29,7 @@ def mqtt_config():
         "client_id": "test_client",
         "username": "test_user",
         "password": "test_pass",
-        "topic_prefix": "test/sensors",
+        "topic_data_prefix": "test/sensors",
         "publish_interval": 30,
         "ssl": False,
         "keepalive": 60,
@@ -121,15 +121,15 @@ def test_publish_sensor_data_success(mqtt_config, mock_sensor):
     assert result is True
 
     # # Verify publish was called for temperature
-    # temp_topic = f"{mqtt_config['topic_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/temperature"
+    # temp_topic = f"{mqtt_config['topic_data_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/temperature"
     # mock_client.publish.assert_any_call(temp_topic, str(temperature).encode())
     #
     # # Verify publish was called for humidity
-    # humidity_topic = f"{mqtt_config['topic_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/humidity"
+    # humidity_topic = f"{mqtt_config['topic_data_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/humidity"
     # mock_client.publish.assert_any_call(humidity_topic, str(humidity).encode())
 
     # Verify publish was called for combined data
-    data_topic = f"{mqtt_config['topic_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/data"
+    data_topic = f"{mqtt_config['topic_data_prefix']}/{mock_sensor.name.lower().replace(' ', '_')}/data"
     # Check that the JSON data was published
     for call_args in mock_client.publish.call_args_list:
         if call_args[0][0] == data_topic:
@@ -138,7 +138,7 @@ def test_publish_sensor_data_success(mqtt_config, mock_sensor):
             assert data["temperature"] == temperature
             assert data["humidity"] == humidity
             assert data["unit"] == mock_sensor.unit
-            assert "timestamp" in data
+            assert "uptime" in data
             break
     else:
         pytest.fail("Data topic was not published")
