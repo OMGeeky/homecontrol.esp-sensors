@@ -26,7 +26,7 @@ The implementation provides the following features:
 
 ### MQTTClient
 
-The `MQTTClient` class is the core implementation of the MQTT protocol. It handles the low-level details of the MQTT protocol, including packet formatting, socket communication, and protocol state management.
+The `MQTTClient` class is the core implementation of the MQTT protocol. It handles the low-level details of the MQTT protocol, including packet formatting, socket communication, and protocol state management. This class is now in its own module `mqtt_client.py` for better testability and separation of concerns.
 
 #### Methods
 
@@ -105,7 +105,7 @@ if client.connect():
 For more control over the MQTT protocol, you can use the `MQTTClient` class directly:
 
 ```python
-from esp_sensors.mqtt import MQTTClient
+from esp_sensors.mqtt_client import MQTTClient
 import time
 
 # Create client
