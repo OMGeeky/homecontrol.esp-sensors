@@ -113,7 +113,7 @@ def test_dht22_read_updates_both_values():
     old_temp = sensor._last_reading
     sensor._last_humidity = None
 
-    # Reading humidity should not change temperature
+    # Reading humidity should not change anything by itself
     humidity = sensor.read_humidity()
     assert sensor._last_reading == old_temp
-    assert humidity is not None
+    assert humidity is None

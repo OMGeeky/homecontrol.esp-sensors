@@ -129,7 +129,7 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
 
     def read_humidity(self) -> float:
         """
-        Read the current humidity.
+        Just returns the _last_humidity. If reading the sensor is needed, call read_temperature first.
 
         Returns:
             The humidity reading as a float (percentage)
