@@ -135,19 +135,6 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
             The humidity reading as a float (percentage)
         """
 
-        if SIMULATION:
-            # Use parent class simulation
-            return super().read_humidity()
-        else:
-            # Actual hardware reading
-            try:
-                self._sensor.measure()
-                self._last_humidity = self._sensor.humidity()
-            except Exception as e:
-                print(f"Error reading DHT22 humidity: {e}")
-                # Return default value if no previous reading
-                self._last_humidity = 0.0
-
         return self._last_humidity
 
     def get_metadata(self):
