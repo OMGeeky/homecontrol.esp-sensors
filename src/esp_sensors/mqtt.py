@@ -9,6 +9,7 @@ This module uses the MQTTClient class from mqtt_client.py for the core MQTT impl
 
 import time
 import json
+import os
 from .mqtt_client import (
     MQTTClient,
     MQTTException,
@@ -278,6 +279,23 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
         ssl = mqtt_config.get("ssl", False)
         use_esp32_client = mqtt_config.get("use_esp32_client", True)
 
+        # Get reconnection configuration
+        reconnect_config = mqtt_config.get("reconnect", {})
+        reconnect_enabled = reconnect_config.get("enabled", True)
+        
+        # Check if we should attempt to connect based on reconnection strategy
+        if reconnect_enabled and not should_attempt_connection(reconnect_config):
+            print("Skipping MQTT connection attempt based on reconnection strategy")
+            # Return a client instance but don't connect
+            if use_esp32_client:
+                return ESP32MQTTClient(
+                    client_id, broker, port, username, password, keepalive, ssl
+                )
+            else:
+                return MQTTClient(
+                    client_id, broker, port, username, password, keepalive, ssl
+                )
+
         print(f"Setting up MQTT client: {client_id} -> {broker}:{port}")
 
         if use_esp32_client:
@@ -289,8 +307,14 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
             # Try to connect
             if client.connect():
                 print("MQTT connected successfully using ESP32MQTTClient")
+                # Reset reconnection attempt counter on successful connection
+                if reconnect_enabled:
+                    update_reconnection_state(reconnect_config, True)
             else:
                 print("Failed to connect using ESP32MQTTClient")
+                # Update reconnection attempt counter
+                if reconnect_enabled:
+                    update_reconnection_state(reconnect_config, False)
 
             return client
             # print("Failed to connect using ESP32MQTTClient, falling back to basic MQTTClient")
@@ -303,10 +327,20 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
                 client_id, broker, port, username, password, keepalive, ssl
             )
 
-            # Try to connect
-            client.connect()
-            print("MQTT connected successfully using basic MQTTClient")
-            return client
+            try:
+                # Try to connect
+                client.connect()
+                print("MQTT connected successfully using basic MQTTClient")
+                # Reset reconnection attempt counter on successful connection
+                if reconnect_enabled:
+                    update_reconnection_state(reconnect_config, True)
+                return client
+            except Exception as e:
+                print(f"Failed to connect using basic MQTTClient: {e}")
+                # Update reconnection attempt counter
+                if reconnect_enabled:
+                    update_reconnection_state(reconnect_config, False)
+                return client
 
     except Exception as e:
         print(f"Failed to connect to MQTT broker: {e}")
@@ -409,6 +443,74 @@ def subscribe_to_config(
         print(f"Failed to subscribe to configuration topic: {e}")
         return False
 
+
+def should_attempt_connection(reconnect_config: dict) -> bool:
+    """
+    Determine if a connection attempt should be made based on the reconnection strategy.
+    
+    Args:
+        reconnect_config: Reconnection configuration dictionary
+        
+    Returns:
+        True if a connection attempt should be made, False otherwise
+    """
+    # If reconnection is disabled, always attempt to connect
+    if not reconnect_config.get("enabled", True):
+        return True
+        
+    # Get reconnection parameters
+    attempt_count = reconnect_config.get("attempt_count", 0)
+    max_attempts = reconnect_config.get("max_attempts", 3)
+    last_attempt_time = reconnect_config.get("last_attempt_time", 0)
+    backoff_factor = reconnect_config.get("backoff_factor", 2)
+    min_interval = reconnect_config.get("min_interval", 3600)  # 1 hour default
+    max_interval = reconnect_config.get("max_interval", 21600)  # 6 hours default
+    
+    # If we haven't reached max attempts, always try to connect
+    if attempt_count < max_attempts:
+        return True
+        
+    # Calculate the backoff interval based on attempt count
+    # Use exponential backoff with a maximum interval
+    interval = min(min_interval * (backoff_factor ** (attempt_count - max_attempts)), max_interval)
+    
+    # Check if enough time has passed since the last attempt
+    current_time = time.time()
+    time_since_last_attempt = current_time - last_attempt_time
+    
+    # If we've waited long enough, allow another attempt
+    if time_since_last_attempt >= interval:
+        print(f"Allowing reconnection attempt after {time_since_last_attempt:.1f}s (interval: {interval:.1f}s)")
+        return True
+    else:
+        print(f"Skipping reconnection attempt, next attempt in {interval - time_since_last_attempt:.1f}s")
+        return False
+
+def update_reconnection_state(reconnect_config: dict, success: bool) -> None:
+    """
+    Update the reconnection state based on the connection attempt result.
+    
+    Args:
+        reconnect_config: Reconnection configuration dictionary
+        success: Whether the connection attempt was successful
+    """
+    current_time = time.time()
+    
+    if success:
+        # Reset attempt counter on successful connection
+        reconnect_config["attempt_count"] = 0
+        print("Connection successful, reset reconnection attempt counter")
+    else:
+        # Increment attempt counter on failed connection
+        attempt_count = reconnect_config.get("attempt_count", 0) + 1
+        reconnect_config["attempt_count"] = attempt_count
+        print(f"Connection failed, reconnection attempt count: {attempt_count}")
+    
+    # Update last attempt time
+    reconnect_config["last_attempt_time"] = current_time
+    
+    # Update the configuration in the parent dictionary
+    # This will be saved to the config file in the main application
 
 def check_config_update(
     client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict, current_config: dict

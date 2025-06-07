@@ -53,6 +53,15 @@ DEFAULT_CONFIG = {
         "topic_data_prefix": "/homecontrol/{device_id}/data",
         "ssl": False,
         "keepalive": 60,
+        "reconnect": {
+            "enabled": True,
+            "max_attempts": 3,
+            "attempt_count": 0,
+            "last_attempt_time": 0,
+            "backoff_factor": 2,
+            "min_interval": 3600,  # 1 hour in seconds
+            "max_interval": 21600,  # 6 hours in seconds
+        },
     },
     "network": {
         "ssid": "<your ssid>",
