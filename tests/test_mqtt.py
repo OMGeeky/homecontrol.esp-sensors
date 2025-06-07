@@ -2,10 +2,11 @@
 Tests for the MQTT module.
 """
 
-import pytest
 import json
 from unittest.mock import patch, MagicMock
-from src.esp_sensors.mqtt_client import MQTTClient
+
+import pytest
+
 from src.esp_sensors.mqtt import setup_mqtt, publish_sensor_data
 
 

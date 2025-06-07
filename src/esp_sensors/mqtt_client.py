@@ -7,10 +7,9 @@ and provides a simple interface for connecting to an MQTT broker, publishing
 messages, and subscribing to topics.
 """
 
-import time
-import json
 import socket
 import struct
+import time
 
 # MQTT Protocol Constants
 MQTT_PROTOCOL_LEVEL = 4  # MQTT 3.1.1

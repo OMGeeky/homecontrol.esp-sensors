@@ -4,25 +4,19 @@ Tests for the MQTT Client module.
 This module contains tests for the MQTTClient class in the mqtt_client.py module.
 """
 
+import struct
 import time
+from unittest.mock import patch, MagicMock
 
 import pytest
-import socket
-import struct
-from unittest.mock import patch, MagicMock, call
+
 from src.esp_sensors.mqtt_client import (
     MQTTClient,
     MQTTException,
-    CONNECT,
     CONNACK,
     PUBLISH,
     PUBACK,
-    SUBSCRIBE,
     SUBACK,
-    PINGREQ,
-    PINGRESP,
-    DISCONNECT,
-    CONN_ACCEPTED,
 )
 
 
