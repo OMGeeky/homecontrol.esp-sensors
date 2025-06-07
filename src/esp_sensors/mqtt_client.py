@@ -562,7 +562,8 @@ class MQTTClient:
                     # Call the callback if set
                     if self.callback:
                         try:
-                            self.callback(topic, message)
+                            # Convert bytearrays to bytes to ensure they are hashable
+                            self.callback(bytes(topic), bytes(message))
                         except Exception as e:
                             print(f"Warning: Callback error: {e}")
                 except struct.error as e:
