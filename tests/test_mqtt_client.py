@@ -133,9 +133,7 @@ class TestMQTTClient:
         mock_socket.return_value = mock_sock
 
         # Mock the _recv_packet method to return None (simulating timeout)
-        with patch.object(
-            mqtt_client, "_recv_packet", return_value=(None, None)
-        ):
+        with patch.object(mqtt_client, "_recv_packet", return_value=(None, None)):
             # Call connect
             result = mqtt_client.connect()
 
@@ -223,9 +221,7 @@ class TestMQTTClient:
         mock_sock.reset_mock()
 
         # Mock _recv_packet to return None (simulating timeout)
-        with patch.object(
-            mqtt_client, "_recv_packet", return_value=(None, None)
-        ):
+        with patch.object(mqtt_client, "_recv_packet", return_value=(None, None)):
             # This should not raise an exception
             mqtt_client.publish("test/topic", "test message", qos=1)
 
@@ -262,9 +258,7 @@ class TestMQTTClient:
         mock_sock.reset_mock()
 
         # Mock _recv_packet to return None (simulating timeout)
-        with patch.object(
-            mqtt_client, "_recv_packet", return_value=(None, None)
-        ):
+        with patch.object(mqtt_client, "_recv_packet", return_value=(None, None)):
             # This should not raise an exception
             mqtt_client.subscribe("test/timeout")
 
