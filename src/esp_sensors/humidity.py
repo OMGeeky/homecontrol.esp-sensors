@@ -2,7 +2,7 @@
 Humidity sensor module for ESP-based sensors.
 """
 
-import random
+from .dummy_sensor import read_dummy  # Dummy sensor for simulation purposes
 from .sensor import Sensor
 from .config import get_sensor_config
 
@@ -41,9 +41,7 @@ class HumiditySensor(Sensor):
         Returns:
             The humidity reading as a float (percentage)
         """
-        # This is a simulation for testing purposes
-        # In a real implementation, this would read from the actual sensor
-        self._last_humidity = round(random.uniform(30.0, 90.0), 1)
+        self._last_humidity = read_dummy("humidity", unit="%")
         return self._last_humidity
 
     def get_metadata(self):

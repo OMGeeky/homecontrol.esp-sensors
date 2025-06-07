@@ -27,6 +27,7 @@ def mqtt_config():
         "publish_interval": 30,
         "ssl": False,
         "keepalive": 60,
+        "config_wait_time": 5.0,
         "use_esp32_client": True,
     }
 

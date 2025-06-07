@@ -2,7 +2,6 @@
 MQTT module for ESP sensors.
 
 This module provides functionality to connect to an MQTT broker and publish sensor data.
-It supports both real hardware and simulation mode.
 
 This module uses the MQTTClient class from mqtt_client.py for the core MQTT implementation.
 """

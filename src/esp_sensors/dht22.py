@@ -7,14 +7,11 @@ try:
     from machine import Pin
 
     SIMULATION = False
-except ImportError:
-    import random
-
-    SIMULATION = True
+except ModuleNotFoundError:
+    SIMULATION = True  # We're in a test environment
 
 from .temperature import TemperatureSensor
 from .humidity import HumiditySensor
-from .config import get_sensor_config
 
 
 class DHT22Sensor(TemperatureSensor, HumiditySensor):
@@ -68,6 +65,9 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
             pin1 = Pin(self.pin)
             self._sensor = dht.DHT22(pin1)
             print(f"DHT22 sensor initialized on pin {pin1}")
+        else:
+            print("Initializing DHT22 sensor in simulation mode...")
+            self._sensor = None
 
     def apply_parameters(self, interval, name, pin, sensor_config):
         # Get main parameters from config if not provided
@@ -107,7 +107,7 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
 
                 self._last_reading = round(temp, 1)
                 # Also read humidity while we're at it
-                self._last_humidity = round(self._sensor.humidity(), 1)
+                self._last_humidity = self._sensor.humidity()
             except Exception as e:
                 print(f"Error reading DHT22 sensor: {e}")
                 # Return last reading if available, otherwise default value
@@ -116,7 +116,7 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
                 if self._last_humidity is None:
                     self._last_humidity = 0.0
 
-        return self._last_reading
+            return self._last_reading
 
     def read(self) -> float:
         """
@@ -134,20 +134,20 @@ class DHT22Sensor(TemperatureSensor, HumiditySensor):
         Returns:
             The humidity reading as a float (percentage)
         """
-        # If we haven't read yet, read only humidity
-        if self._last_humidity is None:
-            if SIMULATION:
-                # Use parent class simulation
-                return super().read_humidity()
-            else:
-                # Actual hardware reading
-                try:
-                    self._sensor.measure()
-                    self._last_humidity = round(self._sensor.humidity(), 1)
-                except Exception as e:
-                    print(f"Error reading DHT22 humidity: {e}")
-                    # Return default value if no previous reading
-                    self._last_humidity = 0.0
+
+        if SIMULATION:
+            # Use parent class simulation
+            return super().read_humidity()
+        else:
+            # Actual hardware reading
+            try:
+                self._sensor.measure()
+                self._last_humidity = self._sensor.humidity()
+            except Exception as e:
+                print(f"Error reading DHT22 humidity: {e}")
+                # Return default value if no previous reading
+                self._last_humidity = 0.0
+
         return self._last_humidity
 
     def get_metadata(self):

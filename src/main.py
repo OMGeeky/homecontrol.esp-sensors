@@ -26,48 +26,6 @@ from machine import Pin, deepsleep
 import esp32
 
 
-def simulate_button_press(timeout=None):
-    """
-    Simulate a button press in simulation mode.
-
-    Args:
-        timeout: Time in seconds to wait for input before returning.
-                If None, wait indefinitely.
-
-    Returns:
-        True if button was pressed or timeout occurred, False to exit
-    """
-    import select
-    import sys
-
-    if timeout is not None:
-        print(
-            f"\nPress Enter to simulate a button press (or 'q' to quit, Ctrl+C to exit)..."
-            f"\nWill automatically continue in {timeout} seconds..."
-        )
-    else:
-        print(
-            "\nPress Enter to simulate a button press (or 'q' to quit, Ctrl+C to exit)..."
-        )
-
-    try:
-        # Set up select to monitor stdin with timeout
-        if timeout is not None:
-            rlist, _, _ = select.select([sys.stdin], [], [], timeout)
-            if not rlist:
-                # Timeout occurred, no input
-                print("Timeout reached, continuing automatically...")
-                return True
-
-        # If we get here, either there was input or timeout was None
-        user_input = input()
-        if user_input.lower() == "q":
-            return False
-        return True
-    except KeyboardInterrupt:
-        return False
-
-
 def main():
     """
     Main function to demonstrate button-triggered sensor display with MQTT publishing.

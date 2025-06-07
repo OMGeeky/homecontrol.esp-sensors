@@ -2,7 +2,7 @@
 Temperature sensor module for ESP-based sensors.
 """
 
-import random
+from .dummy_sensor import read_dummy  # Dummy sensor for simulation purposes
 from .sensor import Sensor
 from .config import get_sensor_config
 
@@ -50,12 +50,7 @@ class TemperatureSensor(Sensor):
         Returns:
             The temperature reading as a float
         """
-        # This is a simulation for testing purposes
-        # In a real implementation, this would read from the actual sensor
-        if self.unit == "C":
-            self._last_reading = round(random.uniform(15.0, 30.0), 1)
-        else:
-            self._last_reading = round(random.uniform(59.0, 86.0), 1)
+        self._last_reading = read_dummy("temperature", unit=self.unit)
         return self._last_reading
 
     def read(self) -> float:
