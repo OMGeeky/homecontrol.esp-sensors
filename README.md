@@ -1,3 +1,5 @@
+[![CI](https://github.com/OMGeeky/homecontrol.esp-sensors/actions/workflows/ci.yml/badge.svg)](https://github.com/OMGeeky/homecontrol.esp-sensors/actions/workflows/ci.yml)
+
 # ESP Sensors
 
 A Python library for interfacing with various sensors on ESP32/ESP8266 microcontrollers using MicroPython.
