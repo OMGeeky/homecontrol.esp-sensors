@@ -5,3 +5,4 @@ config.json
 /deploy/last_upload/
 /deploy/actual_upload/
 __pycache__
+/.output.txt
