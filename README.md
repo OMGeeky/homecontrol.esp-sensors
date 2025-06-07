@@ -102,6 +102,16 @@ pip install -r requirements.txt
 python -m pytest
 ```
 
+### Continuous Integration
+
+This project uses GitHub Actions for continuous integration. The CI workflow automatically runs on every push to the main branch and on pull requests. It performs the following checks:
+
+1. Verifies code formatting with Black
+2. Runs all tests with pytest
+3. Generates test coverage reports
+
+You can view the CI workflow configuration in `.github/workflows/ci.yml`.
+
 ### Code Style
 
 This project uses Black for code formatting:
