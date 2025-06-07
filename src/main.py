@@ -207,6 +207,9 @@ def main():
             else:
                 print("MQTT client not connected, skipping publish")
                 display.set_status("MQTT not connected")
+
+            # Save the updated reconnection state to the configuration
+            config.save_config()
         else:
             print("MQTT is disabled, not publishing data")
 
