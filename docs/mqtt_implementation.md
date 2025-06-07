@@ -20,6 +20,8 @@ The implementation provides the following features:
 - Socket-based communication with MQTT brokers
 - Quality of Service (QoS) support (levels 0 and 1)
 - Ping/keepalive mechanism to maintain connections
+- Smart reconnection strategy with exponential backoff for unreachable brokers
+- Battery-efficient operation when the broker is unavailable
 - Simulation mode for development on non-ESP hardware
 
 ## Classes
@@ -166,7 +168,16 @@ mqtt_config = {
     "topic_data_prefix": "/homecontrol/device/data",  # Prefix for data topics
     "topic_config": "/homecontrol/device/config",     # Topic for configuration
     "load_config_from_mqtt": True,        # Whether to load config from MQTT
-    "config_wait_time": 1.0               # Wait time for config updates in seconds
+    "config_wait_time": 1.0,              # Wait time for config updates in seconds
+    "reconnect": {                        # Reconnection strategy configuration
+        "enabled": True,                  # Enable/disable reconnection strategy
+        "max_attempts": 3,                # Maximum consecutive connection attempts
+        "attempt_count": 0,               # Current number of consecutive failed attempts
+        "last_attempt_time": 0,           # Timestamp of the last connection attempt
+        "backoff_factor": 2,              # Exponential backoff factor
+        "min_interval": 3600,             # Minimum interval between reconnection attempts (1 hour)
+        "max_interval": 21600,            # Maximum interval between reconnection attempts (6 hours)
+    }
 }
 ```
 
@@ -204,6 +215,53 @@ When running on non-ESP hardware, the implementation automatically switches to s
 - You can simulate receiving messages using the `simulate_message` method
 
 This is useful for development and testing without actual hardware.
+
+## Reconnection Strategy
+
+The MQTT implementation includes a smart reconnection strategy designed to balance connectivity needs with battery conservation, especially when the MQTT broker is unreachable. This is particularly important for ESP32 devices that use deep sleep to conserve power.
+
+### How It Works
+
+1. **Initial Connection Attempts**: The system will make up to `max_attempts` consecutive connection attempts (default: 3) without any delay between them.
+
+2. **Exponential Backoff**: After reaching the maximum number of consecutive attempts, the system implements an exponential backoff strategy:
+   - The wait time between attempts increases exponentially based on the `backoff_factor` (default: 2)
+   - The formula is: `min_interval * (backoff_factor ^ (attempt_count - max_attempts))`
+   - This wait time is capped at `max_interval` to ensure reconnection attempts happen regularly
+
+3. **Guaranteed Reconnection Attempts**: With default settings (min_interval: 1 hour, max_interval: 6 hours), the system will attempt to reconnect at least 4 times per day even if the broker remains unreachable.
+
+4. **State Persistence**: The reconnection state (attempt count, last attempt time) is persisted across deep sleep cycles by saving it to the configuration file.
+
+5. **Automatic Reset**: When a connection is successful, the attempt counter is reset to 0, returning to normal operation.
+
+### Configuration
+
+The reconnection strategy can be configured through the `reconnect` section of the MQTT configuration:
+
+```python
+mqtt_config = {
+    # ... other MQTT settings ...
+    "reconnect": {
+        "enabled": True,                  # Enable/disable reconnection strategy
+        "max_attempts": 3,                # Maximum consecutive connection attempts
+        "attempt_count": 0,               # Current number of consecutive failed attempts
+        "last_attempt_time": 0,           # Timestamp of the last connection attempt
+        "backoff_factor": 2,              # Exponential backoff factor
+        "min_interval": 3600,             # Minimum interval (1 hour in seconds)
+        "max_interval": 21600,            # Maximum interval (6 hours in seconds)
+    }
+}
+```
+
+### Battery Efficiency
+
+This strategy significantly reduces battery consumption when the MQTT broker is unreachable for extended periods:
+
+- Instead of attempting to connect on every wake cycle (which would drain the battery quickly)
+- The device will skip connection attempts based on the exponential backoff algorithm
+- This allows the device to spend more time in deep sleep, conserving power
+- While still ensuring regular reconnection attempts to restore functionality when the broker becomes available again
 
 ## Integration with Sensor Data
 
