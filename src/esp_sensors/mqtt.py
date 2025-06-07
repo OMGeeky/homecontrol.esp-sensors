@@ -276,7 +276,6 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
         password = mqtt_config.get("password", "")
         keepalive = mqtt_config.get("keepalive", 60)
         ssl = mqtt_config.get("ssl", False)
-        use_esp32_client = mqtt_config.get("use_esp32_client", True)
 
         # Get reconnection configuration
         reconnect_config = mqtt_config.get("reconnect", {})
@@ -286,60 +285,30 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
         if reconnect_enabled and not should_attempt_connection(reconnect_config):
             print("Skipping MQTT connection attempt based on reconnection strategy")
             # Return a client instance but don't connect
-            if use_esp32_client:
-                return ESP32MQTTClient(
-                    client_id, broker, port, username, password, keepalive, ssl
-                )
-            else:
-                return MQTTClient(
-                    client_id, broker, port, username, password, keepalive, ssl
-                )
+            return ESP32MQTTClient(
+                client_id, broker, port, username, password, keepalive, ssl
+            )
 
         print(f"Setting up MQTT client: {client_id} -> {broker}:{port}")
 
-        if use_esp32_client:
-            # Use the new ESP32MQTTClient
-            client = ESP32MQTTClient(
-                client_id, broker, port, username, password, keepalive, ssl
-            )
+        # Use the new ESP32MQTTClient
+        client = ESP32MQTTClient(
+            client_id, broker, port, username, password, keepalive, ssl
+        )
 
-            # Try to connect
-            if client.connect():
-                print("MQTT connected successfully using ESP32MQTTClient")
-                # Reset reconnection attempt counter on successful connection
-                if reconnect_enabled:
-                    update_reconnection_state(reconnect_config, True)
-            else:
-                print("Failed to connect using ESP32MQTTClient")
-                # Update reconnection attempt counter
-                if reconnect_enabled:
-                    update_reconnection_state(reconnect_config, False)
+        # Try to connect
+        if client.connect():
+            print("MQTT connected successfully using ESP32MQTTClient")
+            # Reset reconnection attempt counter on successful connection
+            if reconnect_enabled:
+                update_reconnection_state(reconnect_config, True)
+        else:
+            print("Failed to connect using ESP32MQTTClient")
+            # Update reconnection attempt counter
+            if reconnect_enabled:
+                update_reconnection_state(reconnect_config, False)
 
-            return client
-            # print("Failed to connect using ESP32MQTTClient, falling back to basic MQTTClient")
-            # # Fall back to basic client
-            # use_esp32_client = False
-
-        if not use_esp32_client:
-            # Use the basic MQTTClient for backward compatibility
-            client = MQTTClient(
-                client_id, broker, port, username, password, keepalive, ssl
-            )
-
-            try:
-                # Try to connect
-                client.connect()
-                print("MQTT connected successfully using basic MQTTClient")
-                # Reset reconnection attempt counter on successful connection
-                if reconnect_enabled:
-                    update_reconnection_state(reconnect_config, True)
-                return client
-            except Exception as e:
-                print(f"Failed to connect using basic MQTTClient: {e}")
-                # Update reconnection attempt counter
-                if reconnect_enabled:
-                    update_reconnection_state(reconnect_config, False)
-                return client
+        return client
 
     except Exception as e:
         print(f"Failed to connect to MQTT broker: {e}")
