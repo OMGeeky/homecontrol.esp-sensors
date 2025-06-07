@@ -138,7 +138,7 @@ class ESP32MQTTClient:
             return True
         except Exception as e:
             print(f"[ESP32MQTT] Failed to publish: {e}")
-            self.connected = False  # Assume connection is lost on error
+            # self.connected = False  # Assume connection is lost on error
             return False
 
     def subscribe(self, topic, qos=0):
@@ -165,7 +165,7 @@ class ESP32MQTTClient:
             return True
         except Exception as e:
             print(f"[ESP32MQTT] Failed to subscribe: {e}")
-            self.connected = False  # Assume connection is lost on error
+            # self.connected = False  # Assume connection is lost on error
             return False
 
     def _message_callback(self, topic, msg):
@@ -197,9 +197,7 @@ class ESP32MQTTClient:
         """
         if not self.connected or not self.client:
             print("[ESP32MQTT] Not connected to broker")
-            # Try to reconnect
-            if not self.connect():
-                return None
+            return None
 
         # Clear any previous message for this topic
         topic_str = (
@@ -230,12 +228,7 @@ class ESP32MQTTClient:
                 time.sleep(0.1)
             except Exception as e:
                 print(f"[ESP32MQTT] Error while reading topic: {e}")
-                self.connected = False
-                # Try to reconnect once
-                if self.connect():
-                    # Resubscribe to the topic
-                    if self.subscribe(topic):
-                        continue
+                # self.connected = False
                 return None
 
         print(

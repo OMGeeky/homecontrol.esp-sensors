@@ -263,7 +263,7 @@ class MQTTClient:
                 return packet_type[0], b""
 
         except Exception as e:
-            self.connected = False
+            # self.connected = False
             raise MQTTException(f"Failed to receive packet: {e}")
 
     def connect(self):
