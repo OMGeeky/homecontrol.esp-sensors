@@ -281,7 +281,11 @@ class MQTTClient:
 
         # Wait for CONNACK
         packet_type, payload = self._recv_packet()
-        if packet_type != CONNACK:
+        if packet_type is None:
+            # Timeout occurred, log the issue but don't crash
+            print("Warning: Timeout waiting for CONNACK")
+            return 1  # Return non-zero to indicate connection failure
+        elif packet_type != CONNACK:
             raise MQTTException(f"Unexpected response from broker: {packet_type}")
 
         # Check connection result
@@ -319,10 +323,16 @@ class MQTTClient:
         if self.connected:
             self._send_packet(PINGREQ)
             packet_type, _ = self._recv_packet()
-            if packet_type != PINGRESP:
+            if packet_type is None:
+                # Timeout occurred, log the issue but don't crash
+                print("Warning: Timeout waiting for PINGRESP")
+                # Still update the last_ping time to prevent continuous ping attempts
+                self.last_ping = time.time()
+            elif packet_type != PINGRESP:
                 self.connected = False
                 raise MQTTException("No PINGRESP received")
-            self.last_ping = time.time()
+            else:
+                self.last_ping = time.time()
 
     def publish(self, topic, msg, retain=False, qos=0):
         """
@@ -373,7 +383,10 @@ class MQTTClient:
         # For QoS 1, wait for PUBACK
         if qos == 1:
             packet_type, _ = self._recv_packet()
-            if packet_type != PUBACK:
+            if packet_type is None:
+                # Timeout occurred, log the issue but don't crash
+                print("Warning: Timeout waiting for PUBACK")
+            elif packet_type != PUBACK:
                 raise MQTTException(f"No PUBACK received: {packet_type}")
 
         return
@@ -413,7 +426,10 @@ class MQTTClient:
 
         # Wait for SUBACK
         packet_type, payload = self._recv_packet()
-        if packet_type != SUBACK:
+        if packet_type is None:
+            # Timeout occurred, log the issue but don't crash
+            print("Warning: Timeout waiting for SUBACK")
+        elif packet_type != SUBACK:
             raise MQTTException(f"No SUBACK received: {packet_type}")
 
         # Store subscription
