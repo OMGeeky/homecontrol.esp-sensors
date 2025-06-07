@@ -302,6 +302,10 @@ def check_and_update_config_from_mqtt(
     """
     Check for configuration updates from MQTT and update local configuration if needed.
 
+    This function uses a two-step process:
+    1. Check the version topic to see if a new version is available
+    2. If a new version is detected, fetch the full configuration from the data topic
+
     Args:
         mqtt_client: MQTT client instance
         mqtt_config: MQTT configuration dictionary
@@ -315,28 +319,22 @@ def check_and_update_config_from_mqtt(
         return current_config
 
     try:
-        # Get the configuration topic
-        topic_config = mqtt_config.get("topic_config")
-        if not topic_config:
-            print("No configuration topic specified")
+        # Get the version and data topics
+        topic_config_version = mqtt_config.get("topic_config_version")
+        topic_config_data = mqtt_config.get("topic_config_data")
+
+        if not topic_config_version or not topic_config_data:
+            print("Configuration version or data topic not specified")
             return current_config
 
-        # Subscribe to the configuration topic
-        print(f"Subscribing to configuration topic: {topic_config}")
+        # This function is now implemented in the mqtt.py module
+        # We'll import and use that implementation
+        from .mqtt import check_config_update
 
-        # This is a simplified implementation - in a real implementation, we would
-        # set up a callback to handle the message and wait for it to be received
-        # For now, we'll just return the current configuration
+        # Use the implementation from mqtt.py to check for updates
+        updated_config = check_config_update(mqtt_client, mqtt_config, current_config)
 
-        # In a real implementation, we would:
-        # 1. Subscribe to the topic
-        # 2. Wait for a message (with timeout)
-        # 3. Parse the message as JSON
-        # 4. Check if the version is newer than the current version
-        # 5. If it is, update the local configuration and save it
-
-        print("MQTT configuration update check not implemented yet")
-        return current_config
+        return updated_config
     except Exception as e:
         print(f"Error checking for configuration updates: {e}")
         return current_config

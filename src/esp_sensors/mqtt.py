@@ -354,7 +354,7 @@ def subscribe_to_config(
     client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict
 ) -> bool:
     """
-    Subscribe to the configuration topic.
+    Subscribe to the configuration version topic.
 
     Args:
         client: ESP32MQTTClient or MQTTClient instance
@@ -368,18 +368,18 @@ def subscribe_to_config(
         return False
 
     try:
-        topic_config = mqtt_config.get("topic_config")
-        if not topic_config:
-            print("No configuration topic specified")
+        topic_config_version = mqtt_config.get("topic_config_version")
+        if not topic_config_version:
+            print("No configuration version topic specified")
             return False
 
-        print(f"Subscribing to configuration topic: {topic_config}")
+        print(f"Subscribing to configuration version topic: {topic_config_version}")
 
         # Both client types have compatible subscribe methods
-        client.subscribe(topic_config.encode())
+        client.subscribe(topic_config_version.encode())
         return True
     except Exception as e:
-        print(f"Failed to subscribe to configuration topic: {e}")
+        print(f"Failed to subscribe to configuration version topic: {e}")
         return False
 
 
@@ -465,6 +465,9 @@ def check_config_update(
     """
     Check for configuration updates from MQTT.
 
+    First checks the version topic to see if a new version is available.
+    If a new version is detected, fetches the full configuration from the data topic.
+
     Args:
         client: ESP32MQTTClient or MQTTClient instance
         mqtt_config: MQTT configuration dictionary
@@ -477,19 +480,49 @@ def check_config_update(
         return current_config
 
     try:
-        # Variable to store the received configuration
+        # Get the version and data topics
+        topic_config_version = mqtt_config.get("topic_config_version")
+        topic_config_data = mqtt_config.get("topic_config_data")
+
+        if not topic_config_version or not topic_config_data:
+            print("Configuration version or data topic not specified")
+            return current_config
+
+        # Variable to store the received version and configuration
+        received_version = None
         received_config = None
+        wait_time = mqtt_config.get("config_wait_time", 1.0)
 
-        if isinstance(client, ESP32MQTTClient):
-            print("Using ESP32MQTTClient to check for configuration updates")
+        # Step 1: Check the version topic for updates
+        print(
+            f"Reading from version topic: {topic_config_version} with wait time: {wait_time}s"
+        )
+        version_msg = client.read_topic(topic_config_version, wait_time)
 
-            topic_config = mqtt_config.get("topic_config")
-            wait_time = mqtt_config.get("config_wait_time", 5.0)
+        if version_msg:
+            try:
+                msg_str = (
+                    version_msg.decode("utf-8")
+                    if isinstance(version_msg, bytes)
+                    else version_msg
+                )
+                received_version = int(msg_str.strip())
+                print(f"Received version: {received_version}")
+            except Exception as e:
+                print(f"Error parsing version message: {e}")
+
+        # Step 2: If we received a version and it's newer, fetch the full config from the data topic
+        current_version = current_config.get("version", 0)
+
+        if received_version is not None and received_version > current_version:
+            print(
+                f"Found newer version ({received_version} > {current_version}), fetching full configuration"
+            )
 
             print(
-                f"Using ESP32MQTTClient to read from config topic with wait time: {wait_time}s"
+                f"Reading from data topic: {topic_config_data} with wait time: {wait_time}s"
             )
-            config_msg = client.read_topic(topic_config, wait_time)
+            config_msg = client.read_topic(topic_config_data, wait_time)
 
             if config_msg:
                 try:
@@ -501,60 +534,16 @@ def check_config_update(
                     received_config = json.loads(msg_str)
                 except Exception as e:
                     print(f"Error parsing configuration message: {e}")
-        else:
 
-            # Define callback function to handle incoming messages
-            def config_callback(topic, msg):
-                nonlocal received_config
-                try:
-                    # Verify that the topic matches our expected topic
-                    expected_topic = mqtt_config.get("topic_config")
-                    topic_str = (
-                        topic.decode("utf-8") if isinstance(topic, bytes) else topic
-                    )
-                    if topic_str != expected_topic:
-                        print(
-                            f"Ignoring message from topic {topic_str} - not matching our config topic {expected_topic}"
-                        )
-                        return
-
-                    # Parse the message as JSON
-                    msg_str = msg.decode("utf-8") if isinstance(msg, bytes) else msg
-                    config_data = json.loads(msg_str)
-                    print(
-                        f"Received configuration from MQTT: version {config_data.get('version', 0)}"
-                    )
-                    received_config = config_data
-                except Exception as e:
-                    print(f"Error parsing configuration message: {e}")
-
-            # Set the callback
-            client.set_callback(config_callback)
-
-            # Subscribe to the configuration topic
-            if not subscribe_to_config(client, mqtt_config):
-                print("Failed to subscribe to configuration topic")
-                return current_config
-
-            # Check for retained messages (will be processed by the callback)
-            print("Checking for retained configuration messages...")
-            client.check_msg()
-
-            # For basic MQTTClient, use the original approach
-            print("Waiting for configuration updates...")
-            # Wait a short time for any retained messages to be processed
-            time.sleep(0.5)
-            client.check_msg()
-            print("done waiting for configuration updates")
-
-        # If we received a configuration and its version is newer, return it
-        if received_config and received_config.get("version", 0) > current_config.get(
-            "version", 0
-        ):
-            print(
-                f"Found newer configuration (version {received_config.get('version')})"
-            )
-            return received_config
+            # If we received a configuration and its version matches what we expected, return it
+            if (
+                received_config
+                and received_config.get("version", 0) == received_version
+            ):
+                print(f"Successfully fetched configuration version {received_version}")
+                return received_config
+            else:
+                print("Failed to fetch the full configuration or version mismatch")
 
         return current_config
     except Exception as e:
