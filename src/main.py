@@ -149,36 +149,38 @@ def main():
                         mqtt_client = None
 
             if mqtt_client and mqtt_client.connected and load_config_from_mqtt:
-                    display.set_status("Checking MQTT config...")
-                    print("Checking for configuration updates before publishing...")
-                    updated_config = check_config_update(
-                        mqtt_client, config.mqtt_config, config.config
-                    )
+                display.set_status("Checking MQTT config...")
+                print("Checking for configuration updates before publishing...")
+                updated_config = check_config_update(
+                    mqtt_client, config.mqtt_config, config.config
+                )
 
-                    # If we got an updated configuration with a newer version, save it
-                    if (
-                        updated_config != config.config
-                        and updated_config.get("version", 0) > config.current_version
-                    ):
-                        display.set_status("Updating config...")
-                        print(
-                            f"Found newer configuration (version {updated_config.get('version')}), updating..."
-                        )
-                        config.save_config(updated_config)
-                        publish_success = mqtt_client.publish(
-                            get_data_topic(config.mqtt_config) + "/config_status",
-                            "Configuration updated",
-                        )
-                        if not publish_success:
-                            print("Failed to publish configuration update status")
-                        # Note: We continue with the current config for this cycle
-                        # The updated config will be used after the next reboot
-                    else:
-                        print(
-                            f"No configuration updates found or no newer version available (local version: {config.current_version})"
-                        )
+                # If we got an updated configuration with a newer version, save it
+                if (
+                    updated_config != config.config
+                    and updated_config.get("version", 0) > config.current_version
+                ):
+                    display.set_status("Updating config...")
+                    print(
+                        f"Found newer configuration (version {updated_config.get('version')}), updating..."
+                    )
+                    config.save_config(updated_config)
+                    publish_success = mqtt_client.publish(
+                        get_data_topic(config.mqtt_config) + "/config_status",
+                        "Configuration updated",
+                    )
+                    if not publish_success:
+                        print("Failed to publish configuration update status")
+                    # Note: We continue with the current config for this cycle
+                    # The updated config will be used after the next reboot
+                else:
+                    print(
+                        f"No configuration updates found or no newer version available (local version: {config.current_version})"
+                    )
             else:
-                print("MQTT client not connected or not configured to load config from broker, skipping config check")
+                print(
+                    "MQTT client not connected or not configured to load config from broker, skipping config check"
+                )
                 display.set_status("MQTT not loading config")
 
             if mqtt_client and mqtt_client.connected:

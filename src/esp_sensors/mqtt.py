@@ -264,7 +264,6 @@ def setup_mqtt(mqtt_config: dict) -> ESP32MQTTClient | MQTTClient | None:
         reconnect_config = mqtt_config.get("reconnect", {})
         reconnect_enabled = reconnect_config.get("enabled", True)
 
-
         print(f"Setting up MQTT client: {client_id} -> {broker}:{port}")
 
         # Use the new ESP32MQTTClient
@@ -337,9 +336,7 @@ def publish_sensor_data(
         # Publish the data and check the result
         publish_success = client.publish(data_topic, data_payload)
         if publish_success:
-            print(
-                f"Published sensor data to MQTT: '{data_topic}'"
-            )
+            print(f"Published sensor data to MQTT: '{data_topic}'")
             return True
         else:
             print("Failed to publish sensor data to MQTT")
@@ -414,7 +411,9 @@ def should_attempt_connection(reconnect_config: dict) -> bool:
 
     # Calculate the backoff interval based on attempt count
     # Use exponential backoff with a maximum interval
-    interval = min(min_interval * (backoff_factor ** (attempt_count - max_attempts)), max_interval)
+    interval = min(
+        min_interval * (backoff_factor ** (attempt_count - max_attempts)), max_interval
+    )
 
     # Check if enough time has passed since the last attempt
     current_time = time.time()
@@ -422,11 +421,16 @@ def should_attempt_connection(reconnect_config: dict) -> bool:
 
     # If we've waited long enough, allow another attempt
     if time_since_last_attempt >= interval:
-        print(f"Allowing reconnection attempt after {time_since_last_attempt:.1f}s (interval: {interval:.1f}s)")
+        print(
+            f"Allowing reconnection attempt after {time_since_last_attempt:.1f}s (interval: {interval:.1f}s)"
+        )
         return True
     else:
-        print(f"Skipping reconnection attempt, next attempt in {interval - time_since_last_attempt:.1f}s")
+        print(
+            f"Skipping reconnection attempt, next attempt in {interval - time_since_last_attempt:.1f}s"
+        )
         return False
+
 
 def update_reconnection_state(reconnect_config: dict, success: bool) -> None:
     """
@@ -453,6 +457,7 @@ def update_reconnection_state(reconnect_config: dict, success: bool) -> None:
 
     # Update the configuration in the parent dictionary
     # This will be saved to the config file in the main application
+
 
 def check_config_update(
     client: ESP32MQTTClient | MQTTClient | None, mqtt_config: dict, current_config: dict
