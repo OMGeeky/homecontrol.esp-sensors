@@ -678,8 +678,8 @@ def publish_sensor_data(
         data_payload = json.dumps(data).encode()
 
         # Both client types have compatible publish methods
-        client.publish(temp_topic, temp_payload)
-        client.publish(humidity_topic, humidity_payload)
+        # client.publish(temp_topic, temp_payload)
+        # client.publish(humidity_topic, humidity_payload)
         client.publish(data_topic, data_payload)
 
         print(
